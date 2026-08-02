@@ -1,0 +1,15 @@
+[app]
+title = FeeTrack Academy
+package.name = feetrack
+package.domain = com.josephmbui
+source.dir = .
+source.include_exts = py,kv,png,jpg,ttf
+version = 1.0
+requirements = python3,kivy,fpdf
+orientation = portrait
+fullscreen = 0
+author = Joseph Mbui
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
