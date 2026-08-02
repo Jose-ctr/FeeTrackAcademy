@@ -21,6 +21,9 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython
 
+      - name: Clear Buildozer cache
+        run: rm -rf .buildozer
+
       - name: Build with Buildozer
         run: buildozer android debug
         env:
