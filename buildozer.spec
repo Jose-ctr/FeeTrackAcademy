@@ -9,7 +9,5 @@ requirements = python3,kivy,fpdf
 orientation = portrait
 fullscreen = 0
 author = Joseph Mbui
-
-[buildozer]
-log_level = 2
-warn_on_root = 1
+android.sdk_path =
+android.accept_sdk_license = True
