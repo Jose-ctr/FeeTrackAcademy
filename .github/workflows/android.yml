@@ -18,8 +18,12 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5 libncurses5-dev libbz2-dev libffi-dev liblzma-dev libsqlite3-dev
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses6 libncurses-dev libtinfo6 libbz2-dev libffi-dev liblzma-dev libsqlite3-dev
           pip install buildozer cython
+
+      - name: Accept Android Licenses
+        run: |
+          yes | sdkmanager --licenses || true
 
       - name: Build with Buildozer
         run: buildozer android debug
