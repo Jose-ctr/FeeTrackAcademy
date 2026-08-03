@@ -59,10 +59,10 @@ jobs:
           wget -q https://dl.google.com/android/repository/$CLI_ZIP
           mkdir -p cmdline-tools
           unzip -q -o $CLI_ZIP -d cmdline-tools/tmp
-          mv cmdline-tools/tmp/cmdline-tools cmdline-tools/latest || true
+          mv cmdline-tools/tmp/cmdline-tools cmdline-tools/latest
           rm -rf cmdline-tools/tmp
 
-          yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
           cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
             "platform-tools" \
             "platforms;android-33" \
@@ -77,17 +77,18 @@ jobs:
 
       - name: Check buildozer.spec exists
         run: |
-          if [ ! -f buildozer.spec ]; then
-            echo "ERROR: buildozer.spec not found in repo root"
+          if [! -f buildozer.spec ]; then
+            echo "::error::buildozer.spec not found in repo root. Please commit it."
+            ls -la
             exit 1
           fi
+          echo "Found buildozer.spec"
 
       - name: Build APK (non-interactive)
         env:
           ANDROIDSDK: ${{ github.workspace }}/android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
           ANDROID_HOME: ${{ github.workspace }}/android-sdk
-          PATH: ${{ github.workspace }}/android-sdk/platform-tools:${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ env.PATH }}
         run: |
           buildozer android clean
           yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
@@ -97,10 +98,8 @@ jobs:
         run: |
           echo "=== bin directory ==="
           ls -lah bin || true
-          echo "=== .buildozer dir ==="
-          ls -lah .buildozer || true
-          echo "=== project root ==="
-          ls -lah || true
+          echo "===.buildozer dir ==="
+          ls -lah.buildozer || true
 
       - name: Upload APK
         if: always()
@@ -109,11 +108,11 @@ jobs:
           name: FeeTrack-APK
           path: |
             bin/*.apk
-            .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
 
       - name: Upload Buildozer Log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build
+          name: buildozer-log
+          path: buildozer-output.txt
