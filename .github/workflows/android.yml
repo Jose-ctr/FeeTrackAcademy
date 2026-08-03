@@ -6,7 +6,7 @@ workflow_dispatch:
 jobs:
 build:
 runs-on: ubuntu-22.04
-timeout-minutes: 90
+timeout-minutes: 120
 
 steps:
   - name: Checkout repository
@@ -29,16 +29,18 @@ steps:
       sudo apt-get install -y \
         git zip unzip autoconf libtool pkg-config \
         zlib1g-dev libncurses5-dev libncursesw5-dev \
-        cmake libffi-dev libssl-dev
+        cmake libffi-dev libssl-dev \
+        build-essential python3-pip python3-setuptools \
+        openjdk-17-jdk libgl1-mesa-dev
 
   - name: Install Buildozer
     run: |
-      python -m pip install --upgrade pip
+      python -m pip install --upgrade pip setuptools wheel
       pip install buildozer==1.5.0 cython==0.29.33 virtualenv
 
   - name: Build APK
     run: |
-      buildozer android debug 2>&1 | tee buildozer-output.txt
+      yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
 
   - name: Show build files
     if: always()
