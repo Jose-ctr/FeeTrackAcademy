@@ -14,11 +14,11 @@ orientation = portrait
 fullscreen = 0
 
 author = Joseph Mbui
-author.email = mbuijoseph51@gmail.com
+author_email = mbuijoseph51@gmail.com
 
-android.api = 31
+android.api = 33
 android.minapi = 21
-android.archs = armeabi-v7a, arm64-v8a
+android.archs = arm64-v8a
 android.accept_sdk_license = True
 
 [buildozer]
