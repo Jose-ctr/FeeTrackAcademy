@@ -6,11 +6,11 @@ source.dir=.
 source.include_exts=py,kv,png,jpg,jpeg,ttf,xml
 version=1.0.0
 version.code=1
-requirements=python3,kivy==2.3.0
+requirements=python3,kivy==2.3.0,setuptools,wheel
 orientation=portrait
 fullscreen=0
 author=Joseph Mbui
-author.email=mbuijoseph51@gmail.com
+author.email=mbui.joseph51@gmail.com
 
 # ANDROID 11+
 android.api=33
@@ -18,6 +18,7 @@ android.minapi=30
 android.arch=arm64-v8a
 android.permissions=INTERNET
 android.accept_sdk_license=True
+android.app_name=FeeTrack Academy
 
 [buildozer]
 log_level=2
