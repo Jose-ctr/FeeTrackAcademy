@@ -11,9 +11,8 @@ fullscreen = 0
 author = Joseph Mbui
 android.api = 31
 android.minapi = 21
-android.ndk = 23b
+android.ndk = 25c
 android.accept_sdk_license = True
-log_level = 2
 
 [buildozer]
 log_level = 2
