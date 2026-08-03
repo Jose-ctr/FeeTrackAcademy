@@ -40,15 +40,12 @@ class LoginScreen(Screen):
         pwd = (self.password.text or "").strip()
 
         if not user or not pwd:
-            # show_popup(title, message)
+
             show_popup("Error", "Please enter username and password")
             return
 
-        # TODO: replace this with real authentication logic
         if user == "admin" and pwd == "password":
             show_popup("Success", "Logged in")
-            # Example navigation (uncomment and adapt if you have a Home screen):
-            # if self.manager:
-            #     self.manager.current = "home_screen"
+            
         else:
             show_popup("Error", "Invalid credentials")
