@@ -17,4 +17,4 @@ Default login
 - Username: "admin"
 - Password: "1234"
 
-Package: "com.josephmbui.feetrack"
+Package: "com.josephmbui.feetrackacademy"
