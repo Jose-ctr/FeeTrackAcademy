@@ -13,8 +13,8 @@ author=Joseph Mbui
 author.email=mbui.joseph51@gmail.com
 
 # ANDROID 11+
-android.api=33
-android.minapi=30
+android.api=31
+android.minapi=21
 android.arch=arm64-v8a
 android.permissions=INTERNET
 android.accept_sdk_license=True
