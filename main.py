@@ -1,278 +1,284 @@
-from kivy.app import App
+def show_message(tfrom kivy.app import App
+from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
+from kivy.uix.popup import Popup
+
+import database
+itle, message):
+    popup = Popup(
+        title=title,
+        content=Label(text=message),
+        size_hint=(0.8, 0.4)
+    )
+    popup.open()
 
 
-class MainScreen(BoxLayout):
+class LoginScreen(Screen):
     def __init__(self, **kwargs):
-        super().__init__(orientation='vertical', padding=20, spacing=20, **kwargs)
+        super().__init__(**kwargs)
 
-        self.add_widget(Label(
+        layout = BoxLayout(orientation='vertical', padding=30, spacing=15)
+
+        layout.add_widget(Label(
             text='FeeTrack Academy',
             font_size='28sp',
-            bold=True
+            bold=True,
+            color=(0, 0.3, 0.8, 1)
         ))
 
-        self.add_widget(Label(
-            text='Developed by Joseph Mbui',
-            font_size='16sp'
-        ))
+        layout.add_widget(Label(text='Login', font_size='22sp'))
 
-        self.add_widget(Label(
-            text='School Fee Management System',
-            font_size='20sp'
-        ))
-
-        self.add_widget(Label(
-            text='APK Build Test Successful',
-            font_size='18sp'
-        ))
-
-        btn = Button(
-            text='Start',
-            size_hint=(1, None),
-            height=50
+        self.username = TextInput(
+            hint_text='Username',
+            multiline=False,
+            size_hint_y=None,
+            height='45dp'
         )
-        self.add_widget(btn)
+
+        self.password = TextInput(
+            hint_text='Password',
+            password=True,
+            multiline=False,
+            size_hint_y=None,
+            height='45dp'
+        )
+
+        login_btn = Button(
+            text='Login',
+            size_hint_y=None,
+            height='50dp',
+            background_color=(0, 0.4, 0.9, 1)
+        )
+        login_btn.bind(on_press=self.login)
+
+        layout.add_widget(self.username)
+        layout.add_widget(self.password)
+        layout.add_widget(login_btn)
+
+        layout.add_widget(Label(
+            text='Developed by Joseph Mbui',
+            size_hint_y=None,
+            height='30dp'
+        ))
+
+        self.add_widget(layout)
+
+    def login(self, instance):
+        if self.username.text == 'admin' and self.password.text == '1234':
+            self.manager.current = 'dashboard'
+            self.username.text = ''
+            self.password.text = ''
+        else:
+            show_message('Login Failed', 'Invalid username or password')
+
+
+class DashboardScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
+
+        layout.add_widget(Label(
+            text='Dashboard',
+            font_size='26sp',
+            bold=True,
+            color=(0, 0.3, 0.8, 1)
+        ))
+
+        btn_add = Button(text='Add Student', size_hint_y=None, height='50dp')
+        btn_view = Button(text='View Students', size_hint_y=None, height='50dp')
+        btn_pay = Button(text='Record Payment', size_hint_y=None, height='50dp')
+        btn_logout = Button(
+            text='Logout',
+            size_hint_y=None,
+            height='50dp',
+            background_color=(0.8, 0.2, 0.2, 1)
+        )
+
+        btn_add.bind(on_press=lambda x: setattr(self.manager, 'current', 'add_student'))
+        btn_view.bind(on_press=lambda x: setattr(self.manager, 'current', 'view_students'))
+        btn_pay.bind(on_press=lambda x: setattr(self.manager, 'current', 'payment'))
+        btn_logout.bind(on_press=lambda x: setattr(self.manager, 'current', 'login'))
+
+        layout.add_widget(btn_add)
+        layout.add_widget(btn_view)
+        layout.add_widget(btn_pay)
+        layout.add_widget(btn_logout)
+
+        layout.add_widget(Label(
+            text='Developed by Joseph Mbui',
+            size_hint_y=None,
+            height='30dp'
+        ))
+
+        self.add_widget(layout)
+
+
+class AddStudentScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
+
+        layout.add_widget(Label(text='Add Student', font_size='24sp', bold=True))
+
+        self.name_input = TextInput(hint_text='Student Name', multiline=False)
+        self.phone_input = TextInput(hint_text='Phone Number', multiline=False)
+        self.fee_input = TextInput(hint_text='Total Fee', multiline=False, input_filter='float')
+
+        save_btn = Button(text='Save Student', size_hint_y=None, height='50dp')
+        save_btn.bind(on_press=self.save_student)
+
+        back_btn = Button(text='Back', size_hint_y=None, height='50dp')
+        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'dashboard'))
+
+        layout.add_widget(self.name_input)
+        layout.add_widget(self.phone_input)
+        layout.add_widget(self.fee_input)
+        layout.add_widget(save_btn)
+        layout.add_widget(back_btn)
+
+        self.add_widget(layout)
+
+    def save_student(self, instance):
+        name = self.name_input.text.strip()
+        phone = self.phone_input.text.strip()
+        fee = self.fee_input.text.strip()
+
+        if not name or not fee:
+            show_message('Error', 'Name and fee are required')
+            return
+
+        database.add_student(name, phone, float(fee))
+
+        self.name_input.text = ''
+        self.phone_input.text = ''
+        self.fee_input.text = ''
+
+        show_message('Success', 'Student added successfully')
+
+
+class ViewStudentsScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        root = BoxLayout(orientation='vertical', padding=10, spacing=10)
+
+        root.add_widget(Label(text='Students', font_size='24sp', bold=True))
+
+        self.grid = GridLayout(cols=1, spacing=8, size_hint_y=None)
+        self.grid.bind(minimum_height=self.grid.setter('height'))
+
+        scroll = ScrollView()
+        scroll.add_widget(self.grid)
+
+        refresh_btn = Button(text='Refresh', size_hint_y=None, height='50dp')
+        refresh_btn.bind(on_press=self.load_students)
+
+        back_btn = Button(text='Back', size_hint_y=None, height='50dp')
+        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'dashboard'))
+
+        root.add_widget(scroll)
+        root.add_widget(refresh_btn)
+        root.add_widget(back_btn)
+
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        self.load_students()
+
+    def load_students(self, *args):
+        self.grid.clear_widgets()
+
+        students = database.get_students()
+
+        if not students:
+            self.grid.add_widget(Label(text='No students found', size_hint_y=None, height='40dp'))
+            return
+
+        for s in students:
+            sid, name, phone, total_fee, paid = s
+            balance = total_fee - paid
+
+            text = (
+                f'ID: {sid}\n'
+                f'Name: {name}\n'
+                f'Phone: {phone}\n'
+                f'Total Fee: KES {total_fee:.2f}\n'
+                f'Paid: KES {paid:.2f}\n'
+                f'Balance: KES {balance:.2f}'
+            )
+
+            lbl = Label(
+                text=text,
+                size_hint_y=None,
+                height='140dp',
+                halign='left',
+                valign='middle'
+            )
+            lbl.bind(size=lambda inst, val: setattr(inst, 'text_size', val))
+
+            self.grid.add_widget(lbl)
+
+
+class PaymentScreen(Screen):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
+
+        layout.add_widget(Label(text='Record Payment', font_size='24sp', bold=True))
+
+        self.id_input = TextInput(hint_text='Student ID', multiline=False, input_filter='int')
+        self.amount_input = TextInput(hint_text='Amount', multiline=False, input_filter='float')
+
+        save_btn = Button(text='Save Payment', size_hint_y=None, height='50dp')
+        save_btn.bind(on_press=self.save_payment)
+
+        back_btn = Button(text='Back', size_hint_y=None, height='50dp')
+        back_btn.bind(on_press=lambda x: setattr(self.manager, 'current', 'dashboard'))
+
+        layout.add_widget(self.id_input)
+        layout.add_widget(self.amount_input)
+        layout.add_widget(save_btn)
+        layout.add_widget(back_btn)
+
+        self.add_widget(layout)
+
+    def save_payment(self, instance):
+        sid = self.id_input.text.strip()
+        amount = self.amount_input.text.strip()
+
+        if not sid or not amount:
+            show_message('Error', 'Enter student ID and amount')
+            return
+
+        database.record_payment(int(sid), float(amount))
+
+        self.id_input.text = ''
+        self.amount_input.text = ''
+
+        show_message('Success', 'Payment recorded successfully')
 
 
 class FeeTrackApp(App):
     def build(self):
-        return MainScreen()
+        database.create_tables()
+
+        sm = ScreenManager()
+        sm.add_widget(LoginScreen(name='login'))
+        sm.add_widget(DashboardScreen(name='dashboard'))
+        sm.add_widget(AddStudentScreen(name='add_student'))
+        sm.add_widget(ViewStudentsScreen(name='view_students'))
+        sm.add_widget(PaymentScreen(name='payment'))
+
+        return sm
 
 
 if __name__ == '__main__':
     FeeTrackApp().run()
-
----
-
-"database.py"
-
-import sqlite3
-
-DB_NAME = 'feetrack.db'
-
-
-def connect():
-    return sqlite3.connect(DB_NAME)
-
-
-def create_tables():
-    conn = connect()
-    cur = conn.cursor()
-
-    cur.execute('''
-    CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        phone TEXT,
-        total_fee REAL DEFAULT 0,
-        paid REAL DEFAULT 0
-    )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-
-def add_student(name, phone, total_fee):
-    conn = connect()
-    cur = conn.cursor()
-    cur.execute(
-        'INSERT INTO students(name, phone, total_fee, paid) VALUES(?,?,?,0)',
-        (name, phone, total_fee)
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_students():
-    conn = connect()
-    cur = conn.cursor()
-    cur.execute('SELECT * FROM students')
-    rows = cur.fetchall()
-    conn.close()
-    return rows
-
-
-def record_payment(student_id, amount):
-    conn = connect()
-    cur = conn.cursor()
-    cur.execute(
-        'UPDATE students SET paid = paid + ? WHERE id=?',
-        (amount, student_id)
-    )
-    conn.commit()
-    conn.close()
-
-
-create_tables()
-
----
-
-"pdf_report.py"
-
-def generate_statement(student_name, total_fee, paid, filename):
-    balance = total_fee - paid
-
-    # Temporary text statement for Android build test
-    with open(filename, 'w') as f:
-        f.write('FeeTrack Academy\\n')
-        f.write(f'Student: {student_name}\\n')
-        f.write(f'Total Fee: KES {total_fee:.2f}\\n')
-        f.write(f'Amount Paid: KES {paid:.2f}\\n')
-        f.write(f'Balance: KES {balance:.2f}\\n')
-        f.write('Developed by Joseph Mbui\\n')
-
-    return filename
-
----
-
-"buildozer.spec"
-
-[app]
-title = FeeTrack Academy
-package.name = feetrack
-package.domain = com.josephmbui
-source.dir = .
-source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
-version = 1.0.0
-version.code = 1
-requirements = python3,kivy==2.3.0
-orientation = portrait
-fullscreen = 0
-author = Joseph Mbui
-author.email = mbuijoseph51@gmail.com
-
-# Android 11+
-android.api = 33
-android.minapi = 30
-android.archs = arm64-v8a
-android.permissions = INTERNET
-android.accept_sdk_license = True
-
-[buildozer]
-log_level = 2
-
----
-
-".github/workflows/android.yml"
-
-Create folders ".github/workflows/" then create "android.yml".
-
-name: Build Android APK
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 240
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            git zip unzip autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev \
-            cmake libffi-dev libssl-dev build-essential
-
-      - name: Install Python packages
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Check buildozer.spec exists
-        run: |
-          if [ ! -f buildozer.spec ]; then
-            echo '::error::buildozer.spec not found in repo root'
-            ls -la
-            exit 1
-          fi
-          echo 'Found buildozer.spec'
-
-      - name: Build APK
-        run: |
-          yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
-
-      - name: Show build files
-        if: always()
-        run: |
-          echo '=== bin directory ==='
-          ls -lah bin || true
-
-      - name: Upload APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrack-APK
-          path: bin/*.apk
-          if-no-files-found: error
-
-      - name: Upload Buildozer Log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: buildozer-log
-          path: buildozer-output.txt
-
----
-
-"README.md"
-
-# FeeTrack Academy
-
-Android school fee management application.
-
-**Developed by Joseph Mbui**
-
-## Features
-- Student registration
-- Fee payment recording
-- Balance calculation
-- Android 11+ support
-- Kivy mobile interface
-
-Package: `com.josephmbui.feetrack`
-
----
-
-How to execute
-
-1. Create all files above in your GitHub repo.
-2. Commit and push.
-3. Open GitHub → Actions.
-4. Click Build Android APK.
-5. Click Run workflow.
-6. Wait for Completed ✅.
-7. Download FeeTrack-APK from Artifacts.
-8. Extract the ZIP and install the APK on your Android phone.
-
-This is a complete buildable project for your current stage. Once the APK installs successfully, I can help you add:
-
-- Login screen ("admin / 1234")
-- Add student form
-- Record payment form
-- Search students
-- Real PDF receipts using "reportlab"
-- Blue FA logo and professional dashboard 🔥📱.
