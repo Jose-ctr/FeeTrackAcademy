@@ -6,52 +6,114 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 240
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      - uses: actions/setup-java@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y zip unzip git build-essential libffi-dev libssl-dev libsqlite3-dev zlib1g-dev libncurses5-dev libncursesw5-dev libgl1-mesa-dev
+          sudo apt-get install -y --no-install-recommends \
+            curl wget git zip unzip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev \
+            libssl-dev build-essential python3-pip python3-setuptools \
+            libgl1-mesa-dev
 
-      - name: Install Android SDK
+      - name: Cache Buildozer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+            ~/.cache/pip
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+
+      - name: Configure Android SDK variables
+        env:
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
         run: |
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          cd $HOME/android-sdk
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip -q commandlinetools-linux-9477386_latest.zip -d cmdline-tools
-          mv cmdline-tools/cmdline-tools cmdline-tools/latest
+          mkdir -p "$ANDROID_SDK_ROOT"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
 
-          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;23.1.7779620"
-
-      - name: Install Buildozer
+      - name: Install Android commandline tools and SDK packages
+        env:
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
         run: |
-          python -m pip install --upgrade pip
-          pip install buildozer cython==0.29.33
+          cd "$ANDROID_SDK_ROOT"
+          CLI_ZIP=commandlinetools-linux-9477386_latest.zip
+          wget -q https://dl.google.com/android/repository/$CLI_ZIP
+          mkdir -p cmdline-tools
+          unzip -q -o $CLI_ZIP -d cmdline-tools/tmp
+          mv cmdline-tools/tmp/cmdline-tools cmdline-tools/latest || true
+          rm -rf cmdline-tools/tmp
 
-      - name: Build APK
+          yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.2" \
+            "ndk;23.1.7779620" \
+            "cmake;3.22.1"
+
+      - name: Install Buildozer and Python deps
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
+
+      - name: Check buildozer.spec exists
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            echo "ERROR: buildozer.spec not found in repo root"
+            exit 1
+          fi
+
+      - name: Build APK (non-interactive)
+        env:
+          ANDROIDSDK: ${{ github.workspace }}/android-sdk
+          ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+          ANDROID_HOME: ${{ github.workspace }}/android-sdk
+          PATH: ${{ github.workspace }}/android-sdk/platform-tools:${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ env.PATH }}
         run: |
           buildozer android clean
-          yes | buildozer android debug
+          yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
+
+      - name: Show build files
+        if: always()
+        run: |
+          echo "=== bin directory ==="
+          ls -lah bin || true
+          echo "=== .buildozer dir ==="
+          ls -lah .buildozer || true
+          echo "=== project root ==="
+          ls -lah || true
 
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: APK
-          path: bin/*.apk
+          name: FeeTrack-APK
+          path: |
+            bin/*.apk
+            .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+
+      - name: Upload Buildozer Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
