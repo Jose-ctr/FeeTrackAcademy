@@ -1,37 +1,56 @@
 name: Build Android APK
-
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+      ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install dependencies
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            ~/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: ${{ runner.os }}-buildozer-
+      - name: Install system dependencies
         run: |
-          sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses6 libncurses-dev libtinfo6 libbz2-dev libffi-dev liblzma-dev libsqlite3-dev
-          pip install --upgrade pip
-          pip install buildozer cython
-
-      - name: Clear Buildozer cache
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+      - name: Install Python packages (buildozer, cython)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
+      - name: Clear Buildozer cache (optional)
         run: rm -rf .buildozer
-
+        if: ${{ env.FORCE_CLEAN_BUILD == 'true' }}
       - name: Build with Buildozer
-        run: buildozer android debug
-        env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
-
+        run: buildozer -v android debug 2>&1 | tee buildozer-output.txt
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: FeeTrack-APK
           path: bin/*.apk
+      - name: Upload Buildozer Log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: buildozer-log
+          path: buildozer-output.txt
