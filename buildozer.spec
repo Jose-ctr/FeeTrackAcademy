@@ -1,6 +1,6 @@
 [app]
 title = FeeTrack Academy
-package.name = feetrack
+package.name = feetrackacademy
 package.domain = com.josephmbui
 source.dir = .
 source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
