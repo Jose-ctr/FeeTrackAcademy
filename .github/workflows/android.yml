@@ -1,88 +1,97 @@
 name: Build Android APK
 
 on:
-workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
-build:
-runs-on: ubuntu-22.04
-timeout-minutes: 240
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
 
-env:
-  ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-  ANDROID_HOME: ${{ github.workspace }}/android-sdk
-
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
-
-  - name: Set up Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.11'
-
-  - name: Set up Java
-    uses: actions/setup-java@v4
-    with:
-      distribution: 'temurin'
-      java-version: '17'
-
-  - name: Install system dependencies
-    run: |
-      sudo apt-get update
-      sudo apt-get install -y --no-install-recommends \
-        git zip unzip wget curl autoconf libtool pkg-config \
-        zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
-        libffi-dev libssl-dev build-essential python3-pip \
-        python3-setuptools libgl1-mesa-dev
-
-  - name: Install Android SDK
-    run: |
-      mkdir -p $HOME/android-sdk/cmdline-tools
-      cd $HOME/android-sdk
-
-      wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-      unzip -q cmdline-tools.zip -d cmdline-tools-temp
-      mkdir -p cmdline-tools/latest
-      mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
-
-      echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
-      echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-      echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-      echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
-
-  - name: Accept licenses and install packages
-    run: |
-      export ANDROID_SDK_ROOT=$HOME/android-sdk
-      export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-
-      yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-
-      sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
-        "platform-tools" \
-        "platforms;android-33" \
-        "build-tools;33.0.2" \
-        "ndk;25.2.9519653"
-
-  - name: Install Buildozer
-    run: |
-      python -m pip install --upgrade pip setuptools wheel
-      python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
-
-  - name: Build APK
     env:
-      ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-      ANDROID_HOME: ${{ env.ANDROID_HOME }}
-    run: |
-      buildozer android clean || true
-      buildozer -v android debug
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
 
-  - name: Upload APK
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: FeeTrackAPK
-      path: |
-        bin/*.apk
-        **/*.apk
-      if-no-files-found: warn
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git zip unzip wget curl autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
+            libffi-dev libssl-dev build-essential python3-pip \
+            python3-setuptools libgl1-mesa-dev
+
+      - name: Install Android SDK
+        run: |
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd $ANDROID_SDK_ROOT
+
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d cmdline-tools-temp
+
+          mkdir -p cmdline-tools/latest
+          mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
+
+          rm -rf cmdline-tools-temp
+          rm -f cmdline-tools.zip
+
+      - name: Accept licenses and install packages
+        run: |
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.2" \
+            "ndk;25.2.9519653"
+
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+
+      - name: Cache Buildozer
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: buildozer-py311-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-py311-
+
+      - name: Install Buildozer
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
+
+      - name: Build APK
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        run: |
+          buildozer android clean || true
+          buildozer -v android debug
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FeeTrackAPK
+          path: |
+            bin/*.apk
+            **/*.apk
+          if-no-files-found: warn
