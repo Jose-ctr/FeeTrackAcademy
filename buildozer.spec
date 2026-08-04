@@ -11,7 +11,7 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,db
 
 version = 1.0.1
 
-requirements = python3,kivy==2.3.0,reportlab
+requirements = python3==3.11.8,kivy==2.3.0,reportlab
 
 orientation = portrait
 fullscreen = 0
