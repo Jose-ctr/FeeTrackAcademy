@@ -2,16 +2,26 @@
 title = FeeTrack Academy
 package.name = feetrackacademy
 package.domain = com.josephmbui
-source.dir =.
-source.include_exts = py,png,jpg,kv,atlas,db
+
+author = Joseph Mbui
+author_email = mbuijoseph51@gmail.com
+
+source.dir = .
+source.include_exts = py,png,jpg,jpeg,kv,atlas,db
+
 version = 1.0.1
-version.code = 2
+
 requirements = python3,kivy==2.3.0,reportlab
+
 orientation = portrait
 fullscreen = 0
 
 android.api = 33
 android.minapi = 30
 android.archs = arm64-v8a
-android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
-android.accept_sdk_license = True
+android.permissions = INTERNET
+
+android.allow_backup = False
+android.enable_androidx = True
+
+log_level = 2
