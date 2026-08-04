@@ -1,120 +1,67 @@
 name: Android Build
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+push:
+branches: [ main ]
+workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Android APK (Buildozer)
-    runs-on: ubuntu-22.04
-    timeout-minutes: 240
+build:
+runs-on: ubuntu-22.04
+timeout-minutes: 120
 
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
+
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.11'
+
+  - name: Set up Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'temurin'
+      java-version: '17'
+
+  - name: Install Android SDK + NDK
+    uses: android-actions/setup-android@v4
+    with:
+      api-level: 33
+      build-tools: '33.0.2'
+      ndk: '27.3.13750724'
+
+  - name: Install Linux dependencies
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y \
+        git zip unzip autoconf automake libtool pkg-config \
+        zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
+        libffi-dev libssl-dev libsqlite3-dev cmake
+
+  - name: Install Buildozer
+    run: |
+      python -m pip install --upgrade pip setuptools wheel
+      pip install buildozer cython
+
+  - name: Remove old Buildozer cache
+    run: |
+      rm -rf ~/.buildozer
+      rm -rf .buildozer
+
+  - name: Build Android APK
     env:
-      ANDROID_SDK_ROOT: /home/runner/android-sdk
-      ANDROID_HOME: /home/runner/android-sdk
-      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/21.3.6528147
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      ANDROIDNDK: /usr/local/lib/android/sdk/ndk/27.3.13750724
+    run: |
+      echo "Using NDK at: $ANDROIDNDK"
+      buildozer android debug
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install system packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            git zip unzip wget curl autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
-            libffi-dev libssl-dev build-essential python3-pip \
-            python3-setuptools libgl1-mesa-dev
-
-      - name: Install Android SDK command-line tools
-        run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          cd $ANDROID_SDK_ROOT
-
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d cmdline-tools-temp
-
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
-
-          rm -rf cmdline-tools-temp
-          rm -f cmdline-tools.zip
-
-          # Compatibility path for Buildozer
-          mkdir -p $ANDROID_SDK_ROOT/tools/bin
-          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-            $ANDROID_SDK_ROOT/tools/bin/sdkmanager
-
-      - name: Accept licenses and install Android packages
-        run: |
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
-
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "ndk;21.3.6528147"
-
-      - name: Make Buildozer use the installed Android SDK
-        run: |
-          mkdir -p $HOME/.buildozer/android/platform
-          ln -sfn $ANDROID_SDK_ROOT $HOME/.buildozer/android/platform/android-sdk
-
-          echo "Checking build-tools:"
-          ls -la $HOME/.buildozer/android/platform/android-sdk/build-tools || true
-
-          echo "Checking aidl:"
-          find $HOME/.buildozer/android/platform/android-sdk/build-tools -name aidl || true
-
-      - name: Cache Buildozer
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer
-          key: buildozer-py311-v7-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-py311-v7-
-
-      - name: Install Buildozer
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
-
-      - name: Verify buildozer.spec
-        run: |
-          test -f buildozer.spec
-          echo "buildozer.spec found"
-
-      - name: Build APK
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
-        run: |
-          buildozer android clean || true
-          buildozer -v android debug
-
-      - name: Upload APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrackAPK
-          path: |
-            bin/*.apk
-            **/*.apk
-          if-no-files-found: warn
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: FeeTrack-APK
+      path: bin/*.apk
