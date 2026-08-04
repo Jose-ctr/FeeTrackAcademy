@@ -22,9 +22,9 @@ android.archs = arm64-v8a
 android.ndk = 25b
 android.permissions = INTERNET
 
-# MUHIMU: Eleza buildozer wapi SDK na NDK ziko ili isidownload yake mwenyewe
-android.sdk_path = %(home)s/android-sdk
-android.ndk_path = %(home)s/android-sdk/ndk/25.2.9519653
+# IMPORTANT: Use absolute paths. %(home)s causes configparser error
+android.sdk_path = /home/runner/android-sdk
+android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
 
 android.allow_backup = False
 android.enable_androidx = True
