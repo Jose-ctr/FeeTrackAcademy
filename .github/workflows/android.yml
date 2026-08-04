@@ -2,14 +2,12 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
-  # Optional: enable on push to branches/tags
-  # push:
-  #   branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 240
+
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
@@ -34,9 +32,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             curl wget git zip unzip autoconf libtool pkg-config \
-            zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev \
-            libssl-dev build-essential python3-pip python3-setuptools \
-            libgl1-mesa-dev
+            zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
+            libffi-dev libssl-dev build-essential python3-pip \
+            python3-setuptools libgl1-mesa-dev
+
+      - name: Cache Buildozer directory
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
 
       - name: Configure Android SDK variables and PATH
         run: |
@@ -51,23 +56,59 @@ jobs:
           ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
         run: |
           set -euo pipefail
+
+          export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/java-17-openjdk-amd64}"
+          echo "Using JAVA_HOME=$JAVA_HOME"
+
           cd "$ANDROID_SDK_ROOT"
+
           CLI_ZIP=commandlinetools-linux-9477386_latest.zip
-          wget -q https://dl.google.com/android/repository/$CLI_ZIP
+
+          if [ ! -f "$CLI_ZIP" ]; then
+            echo "Downloading Android command line tools..."
+            wget -q https://dl.google.com/android/repository/$CLI_ZIP
+          fi
+
           mkdir -p cmdline-tools
-          unzip -q -o $CLI_ZIP -d cmdline-tools/tmp
-          mv cmdline-tools/tmp/cmdline-tools cmdline-tools/latest
+          unzip -q -o "$CLI_ZIP" -d cmdline-tools/tmp
+
+          if [ -d cmdline-tools/tmp/cmdline-tools ]; then
+            rm -rf cmdline-tools/latest || true
+            mv cmdline-tools/tmp/cmdline-tools cmdline-tools/latest
+          else
+            rm -rf cmdline-tools/latest || true
+            mv cmdline-tools/tmp cmdline-tools/latest
+          fi
+
           rm -rf cmdline-tools/tmp
 
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "ndk;23.1.7779620" \
-            "cmake;3.22.1"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
 
-      - name: Install Buildozer and Python deps
+          echo "Accepting Android licenses..."
+          set +o pipefail
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses || true
+          set -o pipefail
+
+          packages=(
+            "platform-tools"
+            "platforms;android-33"
+            "build-tools;33.0.2"
+            "ndk;23.1.7779620"
+            "cmake;3.22.1"
+          )
+
+          for pkg in "${packages[@]}"; do
+            echo "Installing $pkg"
+            for attempt in 1 2 3; do
+              sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "$pkg" && break
+              echo "Retry $attempt for $pkg"
+              sleep 10
+            done
+          done
+
+          test -d "$ANDROID_SDK_ROOT/platforms/android-33"
+
+      - name: Install Buildozer and Python dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
@@ -75,13 +116,13 @@ jobs:
       - name: Check buildozer.spec exists
         run: |
           if [ ! -f buildozer.spec ]; then
-            echo "::error::buildozer.spec not found in repo root. Please commit it."
+            echo "::error::buildozer.spec not found in repository root"
             ls -la
             exit 1
           fi
           echo "Found buildozer.spec"
 
-      - name: Build APK (non-interactive)
+      - name: Build APK
         env:
           ANDROIDSDK: ${{ github.workspace }}/android-sdk
           ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
@@ -94,13 +135,11 @@ jobs:
       - name: Show build files
         if: always()
         run: |
-          echo "=== bin directory ==="
+          echo "=== bin ==="
           ls -lah bin || true
-          echo "=== .buildozer directory ==="
-          ls -lah .buildozer || true
-          echo "=== dist directory (possible places for APK) ==="
+          echo "=== dist ==="
           ls -lah dist || true
-          echo "=== find any apk files ==="
+          echo "=== APK files ==="
           find . -type f -name "*.apk" -ls || true
 
       - name: Upload APK
@@ -110,12 +149,12 @@ jobs:
           name: FeeTrack-APK
           path: |
             bin/*.apk
-            ./.buildozer/android/platform/build/dists/**/*.apk
             dist/*.apk
+            ./.buildozer/android/platform/build/dists/**/*.apk
             **/*.apk
           if-no-files-found: warn
 
-      - name: Upload Buildozer Log
+      - name: Upload Buildozer log
         if: always()
         uses: actions/upload-artifact@v4
         with:
