@@ -1,58 +1,78 @@
 [app]
 
-# App information
+App information
+
 title = FeeTrack Academy
-package.name = feetrack_academy
+package.name = feetrackacademy
 package.domain = com.josephmbui
 
-# Author
+Author
+
 author = Joseph Mbui
 author_email = mbuijoseph51@gmail.com
 
-# Source files
+Source files
+
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,ttf
 
-# Version
+Exclude unnecessary folders
+
+source.exclude_dirs = .git,.github,.buildozer,bin,pycache
+
+Version
+
 version = 1.0.1
 
-# Requirements
+Python requirements
+
 requirements = python3,kivy==2.3.0
 
-# Orientation
+App orientation
+
 orientation = portrait
 
-# Window mode (0 = normal window, 1 = fullscreen)
+Window mode
+
 fullscreen = 0
 
-# Android settings
+Android configuration
+
 android.api = 33
 android.minapi = 21
 android.archs = arm64-v8a
 android.permissions = INTERNET
 
-# Buildozer settings
+Use installed SDK/NDK from GitHub Actions
+
+android.accept_sdk_license = True
+
+Logging
+
 log_level = 2
 warn_on_root = 1
 
-# Android entry point
+AndroidX support
+
+android.enable_androidx = True
+
+Private storage
+
+android.private_storage = True
+
+Entry point
+
 android.entrypoint = org.kivy.android.PythonActivity
 
-# Presplash / icon (optional)
-# presplash.filename = assets/presplash.png
-# icon.filename = assets/icon.png
+Optional app icon and splash screen
 
-# Do not copy build folders into APK
-source.exclude_dirs = .git,.github,.buildozer,bin,__pycache__
+icon.filename = assets/icon.png
 
-# Keep the APK smaller
+presplash.filename = assets/presplash.png
+
+Keep APK smaller
+
 android.add_aars =
 android.gradle_dependencies =
 
-# Storage behavior
-android.private_storage = True
-
-# Enable AndroidX
-android.enable_androidx = True
-
-# End of file
+End of file
