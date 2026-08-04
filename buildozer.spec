@@ -19,12 +19,12 @@ fullscreen = 0
 android.api = 33
 android.minapi = 30
 android.archs = arm64-v8a
-android.ndk = 25b
+android.ndk = 28b
 android.permissions = INTERNET
 
-# IMPORTANT: Use absolute paths. %(home)s causes configparser error
+# THESE 2 ARE MANDATORY FOR CI
 android.sdk_path = /home/runner/android-sdk
-android.ndk_path = /home/runner/android-sdk/ndk/25.2.9519653
+android.ndk_path = /home/runner/android-sdk/ndk/28.0.13025108
 
 android.allow_backup = False
 android.enable_androidx = True
