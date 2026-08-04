@@ -2,7 +2,7 @@
 
 # App information
 title = FeeTrack Academy
-package.name = feetrackacademy
+package.name = feetrack_academy
 package.domain = com.josephmbui
 
 # Author
