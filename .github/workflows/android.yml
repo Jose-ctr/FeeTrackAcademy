@@ -38,14 +38,6 @@ jobs:
             libssl-dev build-essential python3-pip python3-setuptools \
             libgl1-mesa-dev
 
-      - name: Cache Buildozer directories
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.buildozer
-            ~/.cache/pip
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('**/buildozer.spec') }}
-
       - name: Configure Android SDK variables and PATH
         run: |
           mkdir -p "$ANDROID_SDK_ROOT"
