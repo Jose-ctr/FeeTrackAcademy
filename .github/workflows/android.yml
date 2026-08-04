@@ -8,13 +8,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 240
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,21 +31,37 @@ jobs:
             libffi-dev libssl-dev build-essential python3-pip \
             python3-setuptools libgl1-mesa-dev
 
+      - name: Cache Buildozer
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: buildozer-py311-${{ hashFiles('buildozer.spec') }}
+
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
 
-      - name: Build APK
+      - name: Check buildozer.spec exists
         run: |
-          buildozer android clean || true
-          buildozer -v android debug
+          test -f buildozer.spec
+          echo "buildozer.spec found"
+
+      - name: Clean old build
+        run: buildozer android clean || true
+
+      - name: Build APK
+        run: buildozer -v android debug
+
+      - name: Show APK files
+        if: always()
+        run: find . -type f -name "*.apk" -ls || true
 
       - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: FeeTrack-APK
+          name: FeeTrackAPK
           path: |
             bin/*.apk
             **/*.apk
