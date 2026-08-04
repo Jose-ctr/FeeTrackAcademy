@@ -14,7 +14,7 @@ jobs:
     env:
       ANDROID_SDK_ROOT: /home/runner/android-sdk
       ANDROID_HOME: /home/runner/android-sdk
-      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/28.0.13025108
+      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/21.3.6528147
 
     steps:
       - name: Checkout
@@ -36,7 +36,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev
 
-      - name: Install Android SDK + NDK 28c
+      - name: Install Android SDK + NDK commandline tools
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT
@@ -45,7 +45,7 @@ jobs:
           mkdir -p cmdline-tools/latest
           mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
 
-          # THIS IS THE MISSING LINE - CRITICAL FOR BUILDIZER
+          # make sdkmanager accessible where some tools expect it
           mkdir -p $ANDROID_SDK_ROOT/tools/bin
           ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
 
@@ -57,7 +57,7 @@ jobs:
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.2" \
-            "ndk;28.0.13025108"
+            "ndk;21.3.6528147"
 
       - name: Cache Buildozer
         uses: actions/cache@v4
