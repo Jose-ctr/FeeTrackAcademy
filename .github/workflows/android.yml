@@ -1,67 +1,77 @@
 name: Android Build
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+push:
+branches: [ main ]
+workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
+build:
+runs-on: ubuntu-22.04
+timeout-minutes: 120
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+steps:
+  - name: Checkout repository
+    uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+  - name: Set up Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: '3.11'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+  - name: Set up Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'temurin'
+      java-version: '17'
 
-      - name: Install Android SDK + NDK
-        uses: android-actions/setup-android@v4
-        with:
-          api-level: 33
-          build-tools: '33.0.2'
-          ndk: '27.3.13750724'
+  - name: Install Android SDK + Build-Tools
+    uses: android-actions/setup-android@v4
+    with:
+      api-level: 33
+      build-tools: '33.0.2'
+      ndk: '27.3.13750724'
 
-      - name: Install Linux dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip autoconf automake libtool pkg-config \
-            zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
-            libffi-dev libssl-dev libsqlite3-dev cmake
+  - name: Accept Android licenses
+    run: yes | sdkmanager --licenses
 
-      - name: Install Buildozer
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install buildozer cython
+  - name: Install required SDK packages
+    run: |
+      sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Remove old Buildozer cache
-        run: |
-          rm -rf ~/.buildozer
-          rm -rf .buildozer
+  - name: Verify AIDL exists
+    run: |
+      ls -la $ANDROID_SDK_ROOT/build-tools/33.0.2/aidl
 
-      - name: Build Android APK
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/27.3.13750724
-          ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.3.13750724
-          ANDROIDNDK: /usr/local/lib/android/sdk/ndk/27.3.13750724
-        run: |
-          echo "Using NDK at: $ANDROIDNDK"
-          buildozer android debug
+  - name: Install Linux dependencies
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y \
+        git zip unzip autoconf automake libtool pkg-config \
+        zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
+        libffi-dev libssl-dev libsqlite3-dev cmake
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrack-APK
-          path: bin/*.apk
+  - name: Install Buildozer
+    run: |
+      python -m pip install --upgrade pip setuptools wheel
+      pip install buildozer cython
+
+  - name: Clear old Buildozer cache
+    run: |
+      rm -rf ~/.buildozer
+      rm -rf .buildozer
+
+  - name: Build APK
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/27.3.13750724
+      ANDROIDNDK: /usr/local/lib/android/sdk/ndk/27.3.13750724
+    run: |
+      buildozer android debug
+
+  - name: Upload APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: FeeTrack-APK
+      path: bin/*.apk
