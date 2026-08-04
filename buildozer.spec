@@ -22,7 +22,7 @@ android.archs = arm64-v8a
 android.ndk = 28b
 android.permissions = INTERNET
 
-# THESE 2 ARE MANDATORY FOR CI
+# REQUIRED FOR CI - ADD THESE
 android.sdk_path = /home/runner/android-sdk
 android.ndk_path = /home/runner/android-sdk/ndk/28.0.13025108
 
