@@ -4,7 +4,7 @@ package.name = feetrackacademy
 package.domain = com.josephmbui
 
 author = Joseph Mbui
-author_email = mbui.joseph51@gmail.com
+author.email = mbui.joseph51@gmail.com
 
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,db
@@ -13,7 +13,7 @@ version = 1.0.1
 
 # NOTE: ReportLab often fails to build on android (no p4a recipe). 
 # Remove it from requirements unless you have a recipe or a pure-Python alternative.
-requirements = python3==3.11,kivy==2.3.0
+requirements = python3,kivy==2.3.0
 
 orientation = portrait
 fullscreen = 0
