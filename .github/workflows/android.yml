@@ -14,7 +14,7 @@ jobs:
     env:
       ANDROID_SDK_ROOT: /home/runner/android-sdk
       ANDROID_HOME: /home/runner/android-sdk
-      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/21.3.6528147
+      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/28.0.12674087
 
     steps:
     - name: Checkout
@@ -55,13 +55,13 @@ jobs:
           "platform-tools" \
           "platforms;android-33" \
           "build-tools;33.0.2" \
-          "ndk;21.3.6528147"
+          "ndk;28.0.12674087"
 
     - name: Cache Buildozer
       uses: actions/cache@v4
       with:
         path: ~/.buildozer
-        key: buildozer-py311-v11-${{ hashFiles('buildozer.spec') }}
+        key: buildozer-py311-v12-${{ hashFiles('buildozer.spec') }}
     - name: Install Buildozer
       run: |
         python -m pip install --upgrade pip setuptools wheel
