@@ -13,7 +13,8 @@ jobs:
       ANDROID_HOME: /home/runner/android-sdk
       ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/28.0.12674087
       ANDROID_NDK_ROOT: /home/runner/android-sdk/ndk/28.0.12674087
-      P4A_HOSTPYTHON3_VERSION: 3.11.15  # <-- ADD THIS
+      P4A_HOSTPYTHON3_VERSION: 3.11.15
+      P4A_BUILD_DIR: /tmp/p4a_build  # <-- FIX 1: Move build to tmp
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -24,7 +25,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
+        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libjpeg-dev libfreetype6-dev ccache
       - name: Install Android SDK + NDK
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
@@ -38,11 +39,20 @@ jobs:
           echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;28.0.12674087"
+      - name: Add 8GB Swap  # <-- FIX 2: Prevent RAM crash
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
       - name: Clean build cache
         run: |
           rm -rf .buildozer/
           rm -rf ~/.buildozer/
           rm -rf ~/.local/share/python-for-android
+          rm -rf /tmp/p4a_build
       - name: Install python-for-android
         run: pip install --upgrade pip setuptools wheel && pip install git+https://github.com/kivy/python-for-android.git@develop cython==0.29.33
       - name: Build APK with p4a
