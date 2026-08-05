@@ -5,7 +5,7 @@ package.domain = com.josephmbui
 source.dir =.
 source.include_exts = py,png,jpg,kv,atlas
 version = 0.1
-requirements = python3,kivy==2.3.0,pillow,sdl2
+requirements = python3==3.11.6,hostpython3==3.11.6,kivy==2.1.0,pillow,sdl2
 orientation = portrait
 android.api = 31
 android.minapi = 21
