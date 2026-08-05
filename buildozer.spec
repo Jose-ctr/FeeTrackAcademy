@@ -22,10 +22,10 @@ fullscreen = 0
 android.api = 33
 android.minapi = 21
 android.archs = arm64-v8a,armeabi-v7a
-android.ndk = 21e
+android.ndk = 28c
 
 android.sdk_path = /home/runner/android-sdk
-android.ndk_path = /home/runner/android-sdk/ndk/21.3.6528147
+android.ndk_path = /home/runner/android-sdk/ndk/28.0.12674087
 
 android.permissions = INTERNET
 android.accept_sdk_license = True
