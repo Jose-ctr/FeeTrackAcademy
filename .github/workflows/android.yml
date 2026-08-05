@@ -41,7 +41,7 @@ jobs:
         run: pip install --upgrade pip setuptools wheel && pip install git+https://github.com/kivy/python-for-android.git@develop cython==0.29.33
       - name: Build APK with p4a
         run: |
-       python -m pythonforandroid.toolchain apk --dist_name=feetrackacademy --bootstrap=sdl2 --requirements=python3,kivy==2.3.0,certifi,chardet,filetype,idna,requests,six,urllib3 --arch=arm64-v8a --copy-libs --color=always --storage-dir=.buildozer/android/platform/build --ndk-api=21 --debug --package=org.feetrack.academy --name="FeeTrack Academy" --version=0.1 --private=. --orientation=portrait
+          python -m pythonforandroid.toolchain apk --dist_name=feetrackacademy --bootstrap=sdl2 --requirements=python3,kivy==2.3.0,certifi,chardet,filetype,idna,requests,six,urllib3 --arch=arm64-v8a --copy-libs --color=always --storage-dir=.buildozer/android/platform/build --ndk-api=21 --debug --package=org.feetrack.academy --name="FeeTrack Academy" --version=0.1 --private=. --orientation=portrait
           cd .buildozer/android/platform/build/dists/feetrackacademy
           ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
