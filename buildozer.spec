@@ -13,8 +13,8 @@ source.exclude_dirs =.git,.github,.buildozer,bin,__pycache__
 
 version = 1.0.2
 
-# THE FIX: Add hostpython3 and match versions
-requirements = python3==3.11.15,hostpython3==3.11.15,kivy==2.3.0,cython==0.29.33
+# THE FIX: Pin python3 only. Let buildozer pick hostpython3 automatically
+requirements = python3==3.11.15,kivy==2.3.0,cython==0.29.33
 
 orientation = portrait
 fullscreen = 0
