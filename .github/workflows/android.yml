@@ -5,12 +5,14 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    name: Build Android APK (Buildozer)
+    name: Build Android APK (p4a Direct)
     runs-on: ubuntu-22.04
     timeout-minutes: 240
     env:
       ANDROID_SDK_ROOT: /home/runner/android-sdk
       ANDROID_HOME: /home/runner/android-sdk
+      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/28.0.12674087
+      ANDROID_NDK_ROOT: /home/runner/android-sdk/ndk/28.0.12674087
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -21,8 +23,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev
-      - name: Install Android SDK + NDK commandline tools
+        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
+      - name: Install Android SDK + NDK
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd $ANDROID_SDK_ROOT
@@ -30,33 +32,20 @@ jobs:
           unzip -q cmdline-tools.zip -d cmdline-tools-temp
           mkdir -p cmdline-tools/latest
           mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
-          # THE HACK: Create fake old tools folder so buildozer finds sdkmanager
           mkdir -p $ANDROID_SDK_ROOT/tools/bin
           ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
           echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_SDK_ROOT/tools/bin" >> $GITHUB_PATH
-      - name: Accept licenses and install packages
-        run: |
           yes | sdkmanager --licenses || true
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;28.0.12674087"
-      - name: Set NDK env after install
+      - name: Install python-for-android
+        run: pip install --upgrade pip setuptools wheel && pip install git+https://github.com/kivy/python-for-android.git@develop cython==0.29.33
+      - name: Build APK with p4a
         run: |
-          NDK_PATH=$(ls $ANDROID_SDK_ROOT/ndk)
-          echo "Found NDK folder: $NDK_PATH"
-          echo ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/$NDK_PATH >> $GITHUB_ENV
-          echo ANDROIDNDK=$ANDROID_SDK_ROOT/ndk/$NDK_PATH >> $GITHUB_ENV
-          echo ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_PATH >> $GITHUB_ENV
-      - name: Cache Buildozer
-        uses: actions/cache@v4
-        with:
-          path: ~/.buildozer
-          key: buildozer-py311-v21-${{ hashFiles('buildozer.spec') }}
-      - name: Install Buildozer
-        run: pip install --upgrade pip setuptools wheel && pip install buildozer==1.5.0 cython==0.29.33 virtualenv
-      - name: Build APK
-        run: buildozer android clean || true && buildozer -v android debug
+          python -m pythonforandroid.toolchain create --dist_name=feetrackacademy --bootstrap=sdl2 --requirements=python3==3.11.15,kivy==2.3.0 --arch=arm64-v8a --copy-libs --color=always --storage-dir=.buildozer/android/platform/build --ndk-api=21 --debug
+          cd .buildozer/android/platform/build/dists/feetrackacademy
+          ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: FeeTrackAPK
-          path: bin/*
+          path: .buildozer/android/platform/build/dists/feetrackacademy/app/build/outputs/apk/debug/*.apk
