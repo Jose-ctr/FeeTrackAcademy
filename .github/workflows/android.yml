@@ -6,10 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    env:
-      ANDROID_SDK_ROOT: /opt/android-sdk
-      ANDROID_HOME: /opt/android-sdk
-      PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:${{ env.PATH }}
 
     steps:
     - name: Checkout code
@@ -33,9 +29,17 @@ jobs:
       run: |
         sdkmanager --list || true
         yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;34.0.0"
+      env:
+        ANDROID_SDK_ROOT: /opt/android-sdk
+        ANDROID_HOME: /opt/android-sdk
+        PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
 
     - name: Accept Android SDK licenses
       run: yes | sdkmanager --licenses
+      env:
+        ANDROID_SDK_ROOT: /opt/android-sdk
+        ANDROID_HOME: /opt/android-sdk
+        PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
@@ -57,7 +61,7 @@ jobs:
         ANDROID_HOME: /opt/android-sdk
         BUILDOZER_ANDROID_SDK_ROOT: /opt/android-sdk
         BUILDOZER_ANDROID_NDK_ROOT: /opt/android-sdk/ndk/25b
-        PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:${{ env.PATH }}
+        PATH: /opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
