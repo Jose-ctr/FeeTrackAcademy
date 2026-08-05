@@ -34,7 +34,7 @@ jobs:
     - name: Install system packages
       run: |
         sudo apt-get update
-        sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev
+        sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev
 
     - name: Install Android SDK + NDK commandline tools
       run: |
@@ -61,7 +61,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.buildozer
-        key: buildozer-py311-v10-${{ hashFiles('buildozer.spec') }} 
+        key: buildozer-py311-v11-${{ hashFiles('buildozer.spec') }}
     - name: Install Buildozer
       run: |
         python -m pip install --upgrade pip setuptools wheel
@@ -77,4 +77,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: FeeTrackAPK
-        path: bin/*.
+        path: bin/*
