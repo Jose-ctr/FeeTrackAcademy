@@ -11,7 +11,6 @@ jobs:
     env:
       ANDROID_SDK_ROOT: /home/runner/android-sdk
       ANDROID_HOME: /home/runner/android-sdk
-      ANDROID_SDK_MANAGER: /home/runner/android-sdk/cmdline-tools/latest/bin/sdkmanager
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -28,7 +27,11 @@ jobs:
         unzip -q cmdline-tools.zip -d cmdline-tools-temp
         mkdir -p cmdline-tools/latest
         mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
+        # THE HACK: Create fake old tools folder so buildozer finds sdkmanager
+        mkdir -p $ANDROID_SDK_ROOT/tools/bin
+        ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
         echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+        echo "$ANDROID_SDK_ROOT/tools/bin" >> $GITHUB_PATH
     - name: Accept licenses and install packages
       run: |
         yes | sdkmanager --licenses || true
@@ -40,10 +43,9 @@ jobs:
         echo ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/$NDK_PATH >> $GITHUB_ENV
         echo ANDROIDNDK=$ANDROID_SDK_ROOT/ndk/$NDK_PATH >> $GITHUB_ENV
         echo ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDK_PATH >> $GITHUB_ENV
-        ls -la $ANDROID_SDK_ROOT/ndk/$NDK_PATH
     - name: Cache Buildozer
       uses: actions/cache@v4
-      with: {path: ~/.buildozer, key: buildozer-py311-v20-${{ hashFiles('buildozer.spec') }}}
+      with: {path: ~/.buildozer, key: buildozer-py311-v21-${{ hashFiles('buildozer.spec') }}}
     - name: Install Buildozer
       run: pip install --upgrade pip setuptools wheel && pip install buildozer==1.5.0 cython==0.29.33 virtualenv
     - name: Build APK
