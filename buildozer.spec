@@ -24,9 +24,9 @@ Version
 
 version = 1.0.1
 
-Python requirements
+IMPORTANT: pin Python + Kivy + Cython versions
 
-requirements = python3,kivy==2.3.0
+requirements = python3==3.11.15,kivy==2.3.0,cython==0.29.33
 
 App orientation
 
@@ -43,7 +43,7 @@ android.minapi = 21
 android.archs = arm64-v8a
 android.permissions = INTERNET
 
-Use installed SDK/NDK from GitHub Actions
+Accept SDK licenses
 
 android.accept_sdk_license = True
 
@@ -64,7 +64,7 @@ Entry point
 
 android.entrypoint = org.kivy.android.PythonActivity
 
-Optional app icon and splash screen
+Optional icon / splash
 
 icon.filename = assets/icon.png
 
