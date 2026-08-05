@@ -5,32 +5,37 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # <- IMPORTANT: 20.04 is dead
+    runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    - name: Set up Python
+    - name: Set up Python 3.10
       uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5
+        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5 libffi-dev
     
-    - name: Install Buildozer
+    - name: Install Buildozer + Cython
       run: pip install buildozer==1.5.0 cython==0.29.33
     
-    - name: Accept licenses
+    - name: Accept Android SDK Licenses
       run: yes | sdkmanager --licenses || true
     
-    - name: Build with Buildozer
+    - name: Build APK with Buildozer
       run: buildozer -v android debug
+      env:
+        ANDROID_SDK_ROOT: /opt/android-sdk
+        ANDROID_HOME: /opt/android-sdk
     
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: FeeTrack-APK
         path: bin/*.apk
+        if-no-files-found: error
