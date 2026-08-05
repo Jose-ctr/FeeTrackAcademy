@@ -26,7 +26,13 @@ jobs:
         wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
         unzip -q tools.zip
         mv cmdline-tools latest
-        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+        
+        # FIX: Create legacy tools folder so buildozer finds sdkmanager
+        mkdir -p $ANDROID_SDK_ROOT/tools/bin
+        ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
+        ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager $ANDROID_SDK_ROOT/tools/bin/avdmanager
+        
+        export PATH=$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
         yes | sdkmanager --licenses
         yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;34.0.0"
 
@@ -49,7 +55,7 @@ jobs:
         export ANDROID_HOME=/opt/android-sdk
         export BUILDOZER_ANDROID_SDK_ROOT=/opt/android-sdk
         export BUILDOZER_ANDROID_NDK_ROOT=/opt/android-sdk/ndk/25b
-        export PATH=/opt/android-sdk/build-tools/34.0.0:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:$PATH
+        export PATH=/opt/android-sdk/tools/bin:/opt/android-sdk/build-tools/34.0.0:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:$PATH
         buildozer -v android debug
 
     - name: Upload APK Artifact
