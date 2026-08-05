@@ -28,13 +28,21 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         
-      - name: Install Android NDK 25.2.9519653  # <-- UPGRADED BACK TO 25
+      - name: Install Android NDK 25.2.9519653  # <-- COPILOT BULLETPROOF VERSION
         run: |
-          set -e
-          echo "y" | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;25.2.9519653"
-          NDK_DIR="$ANDROID_HOME/ndk/25.2.9519653"
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          set -ex
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager"
+          fi
+          
+          echo "y" | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;25.2.9519653"
+          
+          NDK_DIR="$ANDROID_SDK_ROOT/ndk/25.2.9519653"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$NDK_DIR" >> $GITHUB_ENV
           
@@ -54,8 +62,13 @@ jobs:
           pip install --upgrade pip setuptools wheel
           pip install --no-cache-dir git+https://github.com/kivy/python-for-android.git@develop cython==0.29.33
           
+      - name: Pre-download p4a dependencies  # <-- STOP P4A 404s
+        run: python -m pythonforandroid.toolchain recipes --color=always
+          
       - name: Build APK with p4a
         shell: bash
+        env:
+          P4A_NO_DOWNLOAD: 1
         run: |
           set -e
           python -m pythonforandroid.toolchain apk \
@@ -73,7 +86,8 @@ jobs:
             --private=. \
             --orientation=portrait \
             --permission=INTERNET \
-            --permission=ACCESS_NETWORK_STATE
+            --permission=ACCESS_NETWORK_STATE \
+            --no-wd
           
           cd /tmp/p4a_build/dists/feetrackacademy
           ./gradlew assembleDebug
