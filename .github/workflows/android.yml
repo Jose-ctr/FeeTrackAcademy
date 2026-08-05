@@ -31,17 +31,13 @@ jobs:
           java-version: '8'
       
       - name: Install p4a
-        run: pip install git+https://github.com/kivy/python-for-android.git@stable cython==0.29.33
-      
-      - name: Build APK
-        run: |
-          ls -la
-          echo "Forcing API 33"
-          export ANDROIDAPI=33
-          export ANDROID_API=33
-          python -m pythonforandroid.toolchain apk --spec=buildozer.spec --storage-dir=/tmp/p4a_build --ndk-dir="$ANDROID_NDK_HOME" --arch=arm64-v8a --android-api=33 --debug
-      
-      - uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrackAPK
-          path: /tmp/p4a_build/dists/feetrackacademy/bin/*.apk
+        run: pip install git+https://github.com/kivy/python-for-android.git@stable cython==0.29.33  - name: Build APK
+  run: |
+    ls -la
+    echo "Forcing API 33"
+    export ANDROIDAPI=33
+    export ANDROID_API=33
+    python -m pythonforandroid.toolchain apk --spec=buildozer.spec --storage-dir=/tmp/p4a_build --ndk-dir="$ANDROID_NDK_HOME" --ndk-version=25b --arch=arm64-v8a --android-api=33 --debug  - uses: actions/upload-artifact@v4
+  with:
+    name: FeeTrackAPK
+    path: /tmp/p4a_build/dists/feetrackacademy/bin/*.apk
