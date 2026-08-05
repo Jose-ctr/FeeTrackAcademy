@@ -47,15 +47,4 @@ jobs:
       - name: Build APK with p4a
         run: |
           for attempt in {1..3}; do
-            echo "Build attempt $attempt..."
-            python -m pythonforandroid.toolchain apk --dist_name=feetrackacademy --bootstrap=sdl2 --requirements=python3,kivy==2.3.0,certifi,chardet,filetype,idna,requests,six,urllib3 --arch=arm64-v8a --copy-libs --color=always --storage-dir=.buildozer/android/platform/build --ndk-api=21 --debug --package=org.feetrack.academy --name="FeeTrack Academy" --version=0.1 --private=. --orientation=portrait --permission=INTERNET --permission=ACCESS_NETWORK_STATE && break
-            echo "Attempt $attempt failed, retrying..."
-            sleep 10
-          done
-          cd .buildozer/android/platform/build/dists/feetrackacademy
-          ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: FeeTrackAPK
-          path: .buildozer/android/platform/build/dists/feetrackacademy/app/build/outputs/apk/debug/*.apk
+            echo
