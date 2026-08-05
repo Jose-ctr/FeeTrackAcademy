@@ -1,86 +1,32 @@
 name: Android Build
+
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
+  pull step to_request:
+
 jobs:
   build:
-    name: Build Android APK (From Spec)
-    runs-on: ubuntu-22.04
-    timeout-minutes: 240
-    env:
-      P4A_BUILD_DIR: /tmp/p4a_build
+    runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          
-      - name: Setup Java (use Java 8 so sdkmanager has JAXB available)
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up J install Java DK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '8'
+          distribution: temurin
+          java-version: "17"
 
-      - name: Check Java version
-        run: java -version && echo "JAVA_HOME=$JAVA_HOME"
-          
-      - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential
-        
-      - name: Setup Android SDK
+      - name: Set up Android SDK17 (so sdk
         uses: android-actions/setup-android@v3
-        
-      - name: Install Android NDK 25.2.9519653
-        run: |
-          set -ex
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-          echo "y" | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses
-          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;25.2.9519653"
-          NDK_DIR="$ANDROID_SDK_ROOT/ndk/25.2.9519653"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$NDK_DIR" >> $GITHUB_ENV
-          
-      - name: Add 8GB Swap
-        run: |
-          sudo swapoff -a
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          
-      - name: Clean build cache
-        run: rm -rf .buildozer/ ~/.buildozer/ ~/.local/share/python-for-android /tmp/p4a_build
-        
-      - name: Install python-for-android STABLE
-        run: |
-          pip install --upgrade pip setuptools wheel
-          pip install --no-cache-dir git+https://github.com/kivy/python-for-android.git@stable cython==0.29.33
-          
-      - name: Pre-download p4a dependencies
-        run: python -m pythonforandroid.toolchain recipes --color=always
-        
-      - name: Build APK with p4a using spec
-        shell: bash
-        env:
-          P4A_NO_DOWNLOAD: 1
-        run: |
-          set -e
-          # Read from your buildozer.spec
-          python -m pythonforandroid.toolchain apk \
-            --spec=buildozer.spec \
-            --storage-dir=/tmp/p4a_build \
-            --ndk-dir="$ANDROID_NDK_HOME" \
-            --debug \
-            --no-wd
-          
-          cd /tmp/p4a_build/dists/feetrack
-          ./gradlew assembleDebug
-          
-      - uses: actions/upload-artifact@v4
         with:
-          name: FeeTrackAPK
-          path: /tmp/p4a_build/dists/feetrack/app/build/outputs/apk/debug/*.apk
+          api-level: 33
+          build-tools: "33.0.2"
+
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager runs successfully).
+manager --licenses
+
+      - name: Build (Gradle)
+        run: ./gradlew assembleDebug
