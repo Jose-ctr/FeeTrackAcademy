@@ -17,13 +17,17 @@ jobs:
         with:
           python-version: '3.10'
           
-      - uses: actions/setup-java@v4
+      - name: Setup Java (use Java 8 so sdkmanager has JAXB available)
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '8'
+
+      - name: Check Java version
+        run: java -version && echo "JAVA_HOME=$JAVA_HOME"
           
       - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libjpeg-dev libfreetype6-dev ccache
+        run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential
         
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -58,7 +62,7 @@ jobs:
           
       - name: Pre-download p4a dependencies
         run: python -m pythonforandroid.toolchain recipes --color=always
-          
+        
       - name: Build APK with p4a using spec
         shell: bash
         env:
