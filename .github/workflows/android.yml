@@ -11,6 +11,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Clean buildozer cache
+      run: rm -rf .buildozer bin
+
+    - name: Force Python 3.11.6 in buildozer.spec
+      run: sed -i 's/^requirements =.*/requirements = python3==3.11.6,kivy==2.1.0/' buildozer.spec
+
     - name: Set up Java 17
       uses: actions/setup-java@v4
       with:
@@ -20,47 +26,42 @@ jobs:
     - name: Install Android SDK
       run: |
         export ANDROID_SDK_ROOT=/opt/android-sdk
-        export ANDROID_HOME=/opt/android-sdk
         mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
         cd $ANDROID_SDK_ROOT/cmdline-tools
         wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
         unzip -q tools.zip
         mv cmdline-tools latest
-        
-        # FIX: Create legacy tools folder so buildozer finds sdkmanager
         mkdir -p $ANDROID_SDK_ROOT/tools/bin
         ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
-        ln -s $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager $ANDROID_SDK_ROOT/tools/bin/avdmanager
-        
         export PATH=$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
         yes | sdkmanager --licenses
         yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;34.0.0"
 
-    - name: Set up Python 3.10
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11.6'
 
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5 libffi-dev wget
+        sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5 libffi-dev wget python3.11 python3.11-dev
 
     - name: Install Buildozer + Cython
-      run: pip install buildozer==1.5.0 cython==0.29.33
+      run: |
+        python3.11 -m pip install --upgrade pip
+        python3.11 -m pip install buildozer==1.5.0 cython==0.29.33
 
     - name: Build APK with Buildozer
       run: |
         export ANDROID_SDK_ROOT=/opt/android-sdk
-        export ANDROID_HOME=/opt/android-sdk
         export BUILDOZER_ANDROID_SDK_ROOT=/opt/android-sdk
         export BUILDOZER_ANDROID_NDK_ROOT=/opt/android-sdk/ndk/25b
         export PATH=/opt/android-sdk/tools/bin:/opt/android-sdk/build-tools/34.0.0:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:$PATH
-        buildozer -v android debug
+        python3.11 -m buildozer -v android debug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: FeeTrack-APK
         path: bin/*.apk
-        if-no-files-found: error
