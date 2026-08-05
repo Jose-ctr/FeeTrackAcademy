@@ -9,35 +9,32 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 240
     env:
-      ANDROID_SDK_ROOT: /home/runner/android-sdk
-      ANDROID_HOME: /home/runner/android-sdk
-      ANDROID_NDK_HOME: /home/runner/android-sdk/ndk/28.0.12674087
-      ANDROID_NDK_ROOT: /home/runner/android-sdk/ndk/28.0.12674087
       P4A_BUILD_DIR: /tmp/p4a_build
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'  # changed to 3.11
+          python-version: '3.10'  # 3.10 has prebuilt hostpython
+          
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+          
       - name: Install system packages
         run: sudo apt-get update && sudo apt-get install -y unzip wget zip libncurses5 libstdc++6 autoconf libtool pkg-config zlib1g-dev libncursesw5-dev cmake libffi-dev libssl-dev build-essential libgl1-mesa-dev libsqlite3-dev libbz2-dev libreadline-dev liblzma-dev tk-dev libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libjpeg-dev libfreetype6-dev ccache
-      - name: Install Android SDK + NDK
+        
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3  # <-- OFFICIAL ACTION, NO MORE 404
+        
+      - name: Install NDK and Build Tools
         run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          cd $ANDROID_SDK_ROOT
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d cmdline-tools-temp
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools-temp/cmdline-tools/* cmdline-tools/latest/
-          chmod +x "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" || true
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses || true
-          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;28.0.12674087"
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk" >> $GITHUB_ENV
+          
       - name: Add 8GB Swap
         run: |
           sudo swapoff -a
@@ -45,10 +42,13 @@ jobs:
           sudo chmod 600 /swapfile
           sudo mkswap /swapfile
           sudo swapon /swapfile
+          
       - name: Clean build cache
         run: rm -rf .buildozer/ ~/.buildozer/ ~/.local/share/python-for-android /tmp/p4a_build
+        
       - name: Install python-for-android
         run: pip install --upgrade pip setuptools wheel && pip install git+https://github.com/kivy/python-for-android.git@develop cython==0.29.33
+        
       - name: Build APK with p4a
         shell: bash
         run: |
@@ -56,7 +56,7 @@ jobs:
           python -m pythonforandroid.toolchain apk \
             --dist_name=feetrackacademy \
             --bootstrap=sdl2 \
-            --requirements=hostpython3==3.11,python3==3.11,kivy==2.3.0,certifi,chardet,filetype,idna,requests,six,urllib3 \
+            --requirements=hostpython3==3.10,python3==3.10,kivy==2.3.0,certifi,chardet,filetype,idna,requests,six,urllib3 \
             --arch=arm64-v8a \
             --copy-libs \
             --storage-dir=/tmp/p4a_build \
@@ -72,6 +72,7 @@ jobs:
           
           cd /tmp/p4a_build/dists/feetrackacademy
           ./gradlew assembleDebug
+          
       - uses: actions/upload-artifact@v4
         with:
           name: FeeTrackAPK
