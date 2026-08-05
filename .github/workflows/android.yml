@@ -23,7 +23,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.11.15'
 
     - name: Set up Java
       uses: actions/setup-java@v4
@@ -61,9 +61,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.buildozer
-        key: buildozer-py311-v8-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          buildozer-py311-v8-
+        key: buildozer-py311-v9-${{ hashFiles('buildozer.spec') }}
 
     - name: Install Buildozer
       run: |
@@ -80,5 +78,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: FeeTrackAPK
-        path: bin/*.apk
-        if-no-files-found: warn
+        path: bin/*.
