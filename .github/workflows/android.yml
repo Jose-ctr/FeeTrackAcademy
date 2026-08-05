@@ -36,3 +36,10 @@ jobs:
         
     - name: Build APK
       run: |
+        buildozer -v android debug
+        
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: FeeTrackAPK
+        path: bin/*.apk
