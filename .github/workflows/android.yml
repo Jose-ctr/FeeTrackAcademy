@@ -1,41 +1,29 @@
 name: Build FeeTrack Kivy APK
 
-on:
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-latest
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    
-    - name: Install system dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5 libffi-dev
-    
-    - name: Install Buildozer + Cython
-      run: pip install buildozer==1.5.0 cython==0.29.33
-    
-    - name: Accept Android SDK Licenses
-      run: yes | sdkmanager --licenses || true
-    
-    - name: Build APK with Buildozer
-      run: buildozer -v android debug
-      env:
-        ANDROID_SDK_ROOT: /opt/android-sdk
-        ANDROID_HOME: /opt/android-sdk
-    
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: FeeTrack-APK
-        path: bin/*.apk
-        if-no-files-found: error
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 31
+          build-tools-version: 34.0.0
+      
+      - name: Install dependencies
+        run: |
+          pip install buildozer cython kivy
+      
+      - name: Build APK
+        run: |
+          buildozer android debug
