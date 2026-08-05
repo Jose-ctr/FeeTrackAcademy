@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    name: Build Android APK (p4a Direct)
+    name: Build Android APK (From Spec)
     runs-on: ubuntu-22.04
     timeout-minutes: 240
     env:
@@ -28,19 +28,13 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         
-      - name: Install Android NDK 25.2.9519653  # <-- COPILOT BULLETPROOF VERSION
+      - name: Install Android NDK 25.2.9519653
         run: |
           set -ex
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -x "$SDKMANAGER" ]; then
-            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager"
-          fi
-          
           echo "y" | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses
           "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;37.0.0" "ndk;25.2.9519653"
-          
           NDK_DIR="$ANDROID_SDK_ROOT/ndk/25.2.9519653"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
@@ -57,42 +51,32 @@ jobs:
       - name: Clean build cache
         run: rm -rf .buildozer/ ~/.buildozer/ ~/.local/share/python-for-android /tmp/p4a_build
         
-      - name: Install python-for-android
+      - name: Install python-for-android STABLE
         run: |
           pip install --upgrade pip setuptools wheel
-          pip install --no-cache-dir git+https://github.com/kivy/python-for-android.git@develop cython==0.29.33
+          pip install --no-cache-dir git+https://github.com/kivy/python-for-android.git@stable cython==0.29.33
           
-      - name: Pre-download p4a dependencies  # <-- STOP P4A 404s
+      - name: Pre-download p4a dependencies
         run: python -m pythonforandroid.toolchain recipes --color=always
           
-      - name: Build APK with p4a
+      - name: Build APK with p4a using spec
         shell: bash
         env:
           P4A_NO_DOWNLOAD: 1
         run: |
           set -e
+          # Read from your buildozer.spec
           python -m pythonforandroid.toolchain apk \
-            --dist_name=feetrackacademy \
-            --bootstrap=sdl2 \
-            --requirements=hostpython3==3.10,python3==3.10,kivy==2.3.0,certifi,chardet,filetype,idna,requests,six,urllib3 \
-            --arch=arm64-v8a \
+            --spec=buildozer.spec \
             --storage-dir=/tmp/p4a_build \
-            --ndk-api=21 \
             --ndk-dir="$ANDROID_NDK_HOME" \
             --debug \
-            --package=org.feetrack.academy \
-            --name="FeeTrack Academy" \
-            --version=0.1 \
-            --private=. \
-            --orientation=portrait \
-            --permission=INTERNET \
-            --permission=ACCESS_NETWORK_STATE \
             --no-wd
           
-          cd /tmp/p4a_build/dists/feetrackacademy
+          cd /tmp/p4a_build/dists/feetrack
           ./gradlew assembleDebug
           
       - uses: actions/upload-artifact@v4
         with:
           name: FeeTrackAPK
-          path: /tmp/p4a_build/dists/feetrackacademy/app/build/outputs/apk/debug/*.apk
+          path: /tmp/p4a_build/dists/feetrack/app/build/outputs/apk/debug/*.apk
