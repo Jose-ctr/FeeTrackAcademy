@@ -1,39 +1,18 @@
 name: Build FeeTrack APK
-
 on:
-  workflow_dispatch:
-
+  push:
+    branches: [ main ]
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    
+    runs-on: ubuntu-22.04  # <- change this
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-        
-    - name: Install Java 8
-      uses: actions/setup-java@v3
-      with:
-        java-version: '8'
-        distribution: 'temurin'
-        
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-        
-    - name: Install buildozer
-      run: pip install buildozer==1.5.0 cython==0.29.33
-        
-    - name: Build APK
-      run: buildozer -v android debug
-        
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: FeeTrackAPK
-        path: bin/*.apk
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
