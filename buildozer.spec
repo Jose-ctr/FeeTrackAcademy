@@ -24,7 +24,7 @@ Version
 
 version = 1.0.1
 
-IMPORTANT: pin Python + Kivy + Cython versions
+IMPORTANT: stable versions for Android build
 
 requirements = python3==3.11.15,kivy==2.3.0,cython==0.29.33
 
