@@ -1,32 +1,49 @@
 name: Android Build
-
 on:
   push:
-  pull step to_request:
-
+    branches: [ main ]
+  workflow_dispatch:
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-22.04
+    timeout-minutes: 240
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up J install Java DK 17
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Java 17 for SDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
-
-      - name: Set up Android SDK17 (so sdk
-        uses: android-actions/setup-android@v3
+          java-version: '17'
+          
+      - uses: android-actions/setup-android@v3
+      
+      - name: Install NDK
+        run: |
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
+          
+      - name: Java 8 for p4a
+        uses: actions/setup-java@v4
         with:
-          api-level: 33
-          build-tools: "33.0.2"
-
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager runs successfully).
-manager --licenses
-
-      - name: Build (Gradle)
-        run: ./gradlew assembleDebug
+          distribution: temurin
+          java-version: '8'
+          
+      - name: Install p4a
+        run: pip install git+https://github.com/kivy/python-for-android.git@stable cython==0.29.33
+          
+      - name: Build APK
+        run: |
+          python -m pythonforandroid.toolchain apk --spec=buildozer.spec --storage-dir=/tmp/p4a_build --ndk-dir="$ANDROID_NDK_HOME"
+          cd /tmp/p4a_build/dists/feetrack && ./gradlew assembleDebug
+          
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FeeTrackAPK
+          path: /tmp/p4a_build/dists/feetrack/app/build/outputs/apk/debug/*.apk
