@@ -37,6 +37,11 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install buildozer cython==0.29.33
 
+    - name: Accept Android SDK licenses  # <-- NEW STEP
+      run: |
+        yes | sdkmanager --licenses || true
+        sdkmanager "platforms;android-31" "build-tools;31.0.0"
+
     - name: Clean buildozer cache
       run: rm -rf ~/.buildozer
 
