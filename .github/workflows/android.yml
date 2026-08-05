@@ -5,8 +5,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
-    
+    runs-on: ubuntu-22.04  # <- IMPORTANT: 20.04 is dead
+
     steps:
     - uses: actions/checkout@v4
     
@@ -18,15 +18,19 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install -y python3-pip openjdk-17-jdk unzip zip
-        pip install buildozer cython==0.29.33
+        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5
     
-    - name: Build APK with Buildozer
-      run: |
-        buildozer -v android debug
+    - name: Install Buildozer
+      run: pip install buildozer==1.5.0 cython==0.29.33
+    
+    - name: Accept licenses
+      run: yes | sdkmanager --licenses || true
+    
+    - name: Build with Buildozer
+      run: buildozer -v android debug
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: FeeTrack-Kivy-APK
+        name: FeeTrack-APK
         path: bin/*.apk
