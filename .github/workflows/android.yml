@@ -17,28 +17,18 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        api-level: 31
-        target: default
-        build-tools-version: '34.0.0'
-        ndk: 25b
-
-    - name: Install Android SDK components
+    - name: Install Android SDK
       run: |
         export ANDROID_SDK_ROOT=/opt/android-sdk
         export ANDROID_HOME=/opt/android-sdk
-        export PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
-        sdkmanager --list || true
-        yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;34.0.0"
-
-    - name: Accept Android SDK licenses
-      run: |
-        export ANDROID_SDK_ROOT=/opt/android-sdk
-        export ANDROID_HOME=/opt/android-sdk
-        export PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
+        mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+        cd $ANDROID_SDK_ROOT/cmdline-tools
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+        unzip -q tools.zip
+        mv cmdline-tools latest
+        export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
         yes | sdkmanager --licenses
+        yes | sdkmanager "platform-tools" "platforms;android-31" "build-tools;34.0.0"
 
     - name: Set up Python 3.10
       uses: actions/setup-python@v5
@@ -48,7 +38,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5 libffi-dev
+        sudo apt install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5 libffi-dev wget
 
     - name: Install Buildozer + Cython
       run: pip install buildozer==1.5.0 cython==0.29.33
@@ -59,7 +49,7 @@ jobs:
         export ANDROID_HOME=/opt/android-sdk
         export BUILDOZER_ANDROID_SDK_ROOT=/opt/android-sdk
         export BUILDOZER_ANDROID_NDK_ROOT=/opt/android-sdk/ndk/25b
-        export PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
+        export PATH=/opt/android-sdk/build-tools/34.0.0:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:$PATH
         buildozer -v android debug
 
     - name: Upload APK Artifact
