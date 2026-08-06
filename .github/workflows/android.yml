@@ -5,10 +5,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
-      ANDROID_HOME: ${{ runner.temp }}/android-sdk
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
       ANDROID_NDK_VERSION: 21.4.7075529
-      ANDROID_NDK_HOME: ${{ runner.temp }}/android-sdk/ndk/21.4.7075529
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
 
     steps:
       - name: Checkout repository
@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17' # KIVY NEEDS 17 NOT 11
+          java-version: '17'
 
       - name: Setup Python
         uses: actions/setup-python@v5
