@@ -15,6 +15,7 @@ android.sdk_path =./android-sdk
 android.ndk_path =./android-sdk/ndk/21.4.7075529
 android.archs = arm64-v8a
 android.accept_sdk_license = True
+android.sdk_tools = cmdline-tools # <-- ADD THIS
 android.gradle_dependencies = 
 
 p4a.source_dir = 
