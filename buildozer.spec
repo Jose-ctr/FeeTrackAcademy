@@ -7,11 +7,12 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 0.1
 requirements = python3==3.11.6,hostpython3==3.11.6,kivy==2.1.0,pillow,sdl2
 orientation = portrait
+
 android.api = 31
 android.minapi = 21
 android.ndk = 25b
-android.arch = arm64-v8a
-android.accept_sdk_license = True # <-- ADD THIS
+android.archs = arm64-v8a # <-- FIXED: added S
+android.accept_sdk_license = True
 
 author = Joseph Mbui
 author.email = mbuijoseph51@gmail.com
