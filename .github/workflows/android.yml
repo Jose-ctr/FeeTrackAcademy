@@ -7,6 +7,7 @@ jobs:
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
+      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:$PATH # <-- ADDED THIS
       
     steps:
       - uses: actions/checkout@v4
@@ -36,19 +37,5 @@ jobs:
           unzip commandlinetools-linux-11076708_latest.zip -d cmdline-tools-temp
           mv cmdline-tools-temp/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
           
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
           yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529"
-          
-          echo "NDK installed at:"
-          ls $ANDROID_SDK_ROOT/ndk/
-          
-      - name: Clean and Build
-        run: |
-          rm -rf ~/.buildozer
-          buildozer android debug
-          
-      - uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrack-APK
-          path: bin/*.apk
+          sdkmanager "platform-tools" "platforms;android-31" "build-tools;31
