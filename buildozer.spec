@@ -11,12 +11,11 @@ android.api = 31
 android.minapi = 21
 android.ndk = 25b
 android.arch = arm64-v8a
+android.accept_sdk_license = True # <-- ADD THIS
 
 author = Joseph Mbui
 author.email = mbuijoseph51@gmail.com
 
-android.sdk_path = /opt/android-sdk
-android.ndk_path = /opt/android-ndk
 log_level = 2
 
 [buildozer]
