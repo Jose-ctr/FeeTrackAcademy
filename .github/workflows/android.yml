@@ -15,13 +15,12 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temerin'
+        distribution: 'temurin'  # <-- FIXED
 
-    - name: Ensure git is present (defensive)
+    - name: Ensure git is present
       run: |
         sudo apt-get update
         sudo apt-get install -y git
-        git --version
 
     - name: Install system dependencies
       run: |
@@ -40,7 +39,7 @@ jobs:
     - name: Clean buildozer cache
       run: rm -rf ~/.buildozer
 
-    - name: Build APK with Buildozer  # <-- Let buildozer install SDK + accept licenses
+    - name: Build APK with Buildozer
       run: |
         cd $GITHUB_WORKSPACE
         buildozer android debug
