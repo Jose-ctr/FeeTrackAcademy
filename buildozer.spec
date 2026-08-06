@@ -1,39 +1,25 @@
-name: Build FeeTrack Kivy APK
-on: workflow_dispatch
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROIDNDK: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
-      ANDROID_NDK_ROOT: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: {java-version: '17', distribution: 'temurin'}
-      - uses: actions/setup-python@v5
-        with: {python-version: '3.10.9'}
-      - name: Install Buildozer + Cython
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install buildozer cython==0.29.33
-      - name: Install Android SDK + Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ant wget unzip zip lib32z1 lib32stdc++6 libffi-dev
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-          cd /tmp && wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          unzip -q commandlinetools-linux-11076708_latest.zip -d cmdline-tools-temp
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-          mv cmdline-tools-temp/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529"
-          echo "Installed NDK directories:" && ls -la "$ANDROID_SDK_ROOT/ndk"
-      - name: Clean buildozer cache
-        run: rm -rf ~/.buildozer
-      - name: Build APK with Buildozer
-        run: buildozer android debug
-      - uses: actions/upload-artifact@v4
-        with: {name: FeeTrack-APK, path: bin/*.apk}
+[app]
+title = FeeTrack
+package.name = feetrack
+package.domain = com.josephmbui
+source.dir =.
+source.include_exts = py,png,jpg,kv,atlas
+version = 0.1
+requirements = python3==3.10.9,hostpython3==3.10.9,kivy==2.1.0,pillow,sdl2,reportlab
+orientation = portrait
+
+android.api = 31
+android.minapi = 21
+android.ndk = 21.4.7075529
+android.archs = arm64-v8a
+android.accept_sdk_license = True
+android.gradle_dependencies = 
+
+author = Joseph Mbui
+author.email = mbuijoseph51@gmail.com
+
+log_level = 2
+
+[buildozer]
+log_level = 2
+warn_on_root = 0
