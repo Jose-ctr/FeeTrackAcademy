@@ -6,7 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
       ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
+      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:${{ env.PATH }}
       
     steps:
       - name: Install System Dependencies
@@ -35,14 +37,21 @@ jobs:
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
           unzip commandlinetools-linux-11076708_latest.zip -d cmdline-tools-temp
           mv cmdline-tools-temp/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          
-          # FULL PATH TO SDKMANAGER - NO MORE "command not found"
+
+          # Create the legacy tools/bin path some scripts (buildozer/p4a) expect
+          mkdir -p $ANDROID_SDK_ROOT/tools/bin
+          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
+          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager $ANDROID_SDK_ROOT/tools/bin/avdmanager || true
+          chmod +x $ANDROID_SDK_ROOT/tools/bin/sdkmanager || true
+
+          # Ensure sdkmanager on PATH and accept licenses
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
           yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
           $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529"
-          
+
           echo "NDK installed at:"
           ls $ANDROID_SDK_ROOT/ndk/
-          
+      
       - name: Clean and Build
         run: |
           rm -rf ~/.buildozer
