@@ -12,13 +12,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y curl wget unzip zip ant lib32z1 lib32stdc++6 libffi-dev build-essential libc6:i386 libncurses6:i386
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl wget unzip zip tar gzip ant
+          sudo apt-get install -y lib32z1 lib32stdc++6 libffi-dev build-essential
+          sudo apt-get install -y libssl-dev zlib1g-dev
+
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
+
       - uses: actions/setup-python@v5
         with: {python-version: '3.10'}
+
       - run: echo "ANDROIDNDKHOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+
       - run: pip install buildozer cython==0.29.33
+
       - name: Install Android SDK + NDK
         run: |
           mkdir -p "$ANDROID_SDK_ROOT"
@@ -30,17 +41,11 @@ jobs:
           ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;${ANDROID_NDK_VERSION}"
+
       - run: rm -rf ~/.buildozer || true
-      - name: Create buildozer.spec
-        run: |
-          buildozer init
-          sed -i 's/^title =.*/title = FeeTrack/' buildozer.spec
-          sed -i 's/^package.name =.*/package.name = feetrack/' buildozer.spec
-          sed -i 's/^requirements =.*/requirements = python3,kivy/' buildozer.spec
-          sed -i 's/^android.api =.*/android.api = 31/' buildozer.spec
-          sed -i 's/^android.minapi =.*/android.minapi = 21/' buildozer.spec
-          sed -i 's/^android.ndk =.*/android.ndk = 21.4.7075529/' buildozer.spec
+
       - name: Build APK
         run: buildozer -v android debug
+
       - uses: actions/upload-artifact@v4
         with: {name: FeeTrack-APK, path: bin/*.apk}
