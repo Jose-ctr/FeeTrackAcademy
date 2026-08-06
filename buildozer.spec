@@ -26,4 +26,14 @@ jobs:
           cd /tmp && wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
           unzip -q commandlinetools-linux-11076708_latest.zip -d cmdline-tools-temp
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-          mv cmdline
+          mv cmdline-tools-temp/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529"
+          echo "Installed NDK directories:" && ls -la "$ANDROID_SDK_ROOT/ndk"
+      - name: Clean buildozer cache
+        run: rm -rf ~/.buildozer
+      - name: Build APK with Buildozer
+        run: buildozer android debug
+      - uses: actions/upload-artifact@v4
+        with: {name: FeeTrack-APK, path: bin/*.apk}
