@@ -13,21 +13,17 @@ jobs:
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
       ANDROID_NDK_VERSION: 25.2.9519653
       ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
-      ANDROID_NDK_ROOT: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
     - name: Install system dependencies
       run: |
         sudo apt update --fix-missing || true
-        sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev || sudo apt --fix-broken install -y
+        sudo apt install -y git zip unzip openjdk-17-jdk autoconf automake libtool libtool-bin pkg-config build-essential cmake ninja-build libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 libreadline-dev libsqlite3-dev libbz2-dev liblzma-dev libjpeg-dev libfreetype6-dev || sudo apt --fix-broken install -y
 
     - name: Install Android SDK + NDK 25b
       run: |
@@ -36,8 +32,6 @@ jobs:
         mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
         unzip -q commandlinetools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
         mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-        mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
-        ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
         yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
         "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
 
