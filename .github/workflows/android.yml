@@ -6,7 +6,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+    env:
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -15,36 +17,45 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '17'
-        distribution: 'temurin'  # <-- FIXED
+        distribution: 'temurin'
 
-    - name: Ensure git is present
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y git
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get install -y python3-pip zip unzip openjdk-17-jdk
-
-    - name: Install Python 3.11.6
+    - name: Set up Python 3.11.6
       uses: actions/setup-python@v5
       with:
         python-version: '3.11.6'
 
-    - name: Install Buildozer
+    - name: Install Buildozer + Cython
       run: |
         python -m pip install --upgrade pip
         python -m pip install buildozer cython==0.29.33
+
+    - name: Install Android SDK, NDK, and Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ant wget unzip zip lib32z1 lib32stdc++6
+        
+        # Setup SDK
+        mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+        cd /tmp
+        wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+        unzip -q commandlinetools-linux-11076708_latest.zip -d cmdline-tools-temp
+        mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+        mv cmdline-tools-temp/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+        
+        # Install SDK packages and accept licenses
+        export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+        yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
+        sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
 
     - name: Clean buildozer cache
       run: rm -rf ~/.buildozer
 
     - name: Build APK with Buildozer
-      run: |
-        cd $GITHUB_WORKSPACE
-        buildozer android debug
+      env:
+        ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      run: buildozer android debug
 
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: FeeTrack-APK
