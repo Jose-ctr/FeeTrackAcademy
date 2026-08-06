@@ -5,59 +5,62 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/21.4.7075529
-      PATH: ${{ github.workspace }}/android-sdk/cmdline-tools/latest/bin:${{ github.workspace }}/android-sdk/platform-tools:${{ env.PATH }}
-      
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+      ANDROID_HOME: ${{ runner.temp }}/android-sdk
+      ANDROID_NDK_VERSION: 21.4.7075529
+      ANDROID_NDK_HOME: ${{ runner.temp }}/android-sdk/ndk/21.4.7075529
+
     steps:
-      - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y tar gzip ant wget unzip zip lib32z1 lib32stdc++6 libffi-dev
-      
-      - uses: actions/checkout@v4
-      
-      - uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10.9'
-          
-      - name: Install Buildozer
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
         run: |
-          python -m pip install --upgrade pip
+          sudo apt-get update
+          sudo dpkg --add-architecture i386 || true
+          sudo apt-get update
+          sudo apt-get install -y curl wget unzip zip tar gzip ant lib32z1 lib32stdc++6 libffi-dev build-essential libc6:i386 libncurses5:i386 libssl-dev
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17' # KIVY NEEDS 17 NOT 11
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Export NDK path for Buildozer
+        run: echo "ANDROIDNDKHOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+
+      - name: Install pip packages
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
           pip install buildozer cython==0.29.33
-          
-      - name: Install Android SDK + NDK 21.4.7075529
+
+      - name: Install Android SDK + NDK
         run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          set -eux
+          mkdir -p "$ANDROID_SDK_ROOT"
           cd /tmp
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip commandlinetools-linux-11076708_latest.zip -d cmdline-tools-temp
-          mv cmdline-tools-temp/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          curl -fLo commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q commandlinetools.zip -d cmdline-tools-temp
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          mv cmdline-tools-temp/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;${ANDROID_NDK_VERSION}"
 
-          # Create the legacy tools/bin path some scripts (buildozer/p4a) expect
-          mkdir -p $ANDROID_SDK_ROOT/tools/bin
-          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager $ANDROID_SDK_ROOT/tools/bin/sdkmanager
-          ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/avdmanager $ANDROID_SDK_ROOT/tools/bin/avdmanager || true
-          chmod +x $ANDROID_SDK_ROOT/tools/bin/sdkmanager || true
+      - name: Clean previous buildozer state
+        run: rm -rf ~/.buildozer || true
 
-          # Ensure sdkmanager on PATH and accept licenses
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;21.4.7075529"
+      - name: Build APK with Buildozer
+        run: buildozer -v android debug
 
-          echo "NDK installed at:"
-          ls $ANDROID_SDK_ROOT/ndk/
-      
-      - name: Clean and Build
-        run: |
-          rm -rf ~/.buildozer
-          buildozer android debug
-          
-      - uses: actions/upload-artifact@v4
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
           name: FeeTrack-APK
           path: bin/*.apk
