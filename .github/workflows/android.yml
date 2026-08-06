@@ -26,8 +26,8 @@ jobs:
 
     - name: Install system dependencies
       run: |
-        sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+        sudo apt update --fix-missing || true
+        sudo apt install -y git zip unzip openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev || sudo apt --fix-broken install -y
 
     - name: Install Android SDK + NDK 25b
       run: |
@@ -35,4 +35,22 @@ jobs:
         cd /tmp && curl -fLo commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
         mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
         unzip -q commandlinetools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
-        mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID
+        mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+        mkdir -p "$ANDROID_SDK_ROOT/tools/bin"
+        ln -sf "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_SDK_ROOT/tools/bin/sdkmanager"
+        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
+        "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
+
+    - name: Install Buildozer + Cython
+      run: |
+        python -m pip install --upgrade pip
+        pip install buildozer cython==0.29.33
+
+    - name: Build APK
+      run: buildozer -v android debug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: FeeTrack-APK
+        path: bin/*.apk
