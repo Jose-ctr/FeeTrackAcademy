@@ -10,7 +10,7 @@ orientation = portrait
 
 android.api = 31
 android.minapi = 21
-android.ndk = 27.3.13750724
+android.ndk = 21.4.7075529
 android.archs = arm64-v8a
 android.accept_sdk_license = True
 android.gradle_dependencies = 
