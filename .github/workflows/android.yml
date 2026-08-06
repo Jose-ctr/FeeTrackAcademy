@@ -18,10 +18,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Python 3.11.6
+      - name: Set up Python 3.10.9 # <-- CHANGED
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11.6'
+          python-version: '3.10.9' # <-- CHANGED
 
       - name: Install Buildozer + Cython
         run: |
@@ -31,7 +31,7 @@ jobs:
       - name: Install Android SDK + Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ant wget unzip zip lib32z1 lib32stdc++6
+          sudo apt-get install -y ant wget unzip zip lib32z1 lib32stdc++6 libffi-dev # <-- ADDED libffi-dev
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           cd /tmp
           wget -q "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
@@ -40,7 +40,7 @@ jobs:
           mv cmdline-tools-temp/cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
-          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;27.3.13750724" # <-- CHANGED
 
       - name: Clean buildozer cache
         run: rm -rf ~/.buildozer
@@ -49,7 +49,8 @@ jobs:
         env:
           ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
           ANDROIDSDK: ${{ github.workspace }}/android-sdk
-          ANDROIDNDK: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
+          ANDROIDNDK: ${{ github.workspace }}/android-sdk/ndk/27.3.13750724 # <-- CHANGED
+          ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/27.3.13750724 # <-- ADDED
         run: buildozer android debug
 
       - name: Upload APK Artifact
