@@ -17,7 +17,7 @@ warn_on_root = 0
 [android]
 android.api = 33
 android.minapi = 21
-android.ndk = 23b
+android.ndk = 28c
 android.arch = arm64-v8a
 android.accept_sdk_license = True
 android.sdk_tools = cmdline-tools
