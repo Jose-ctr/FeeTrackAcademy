@@ -33,17 +33,14 @@ jobs:
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
           unzip -q cmdtools.zip
           mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-          
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           mkdir -p "$ANDROID_SDK_ROOT/licenses"
           echo "8933bad161af4178b1185d1a37c4e3d9edafba9b" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
-          yes | sdkmanager --licenses
-          
-          # Install packages one by one so it doesn't crash
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-33"
-          sdkmanager "build-tools;33.0.2"
-          sdkmanager "ndk;21.4.7075529"
+          yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools"
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platforms;android-33"
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "build-tools;33.0.2"
+          sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "ndk;21.4.7075529"
 
       - name: Build APK
         shell: bash
