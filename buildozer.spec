@@ -16,6 +16,7 @@ warn_on_root = 0
 android.api = 33
 android.minapi = 21
 android.ndk = 23c
+android.ndk_path = /home/runner/Android/Sdk/ndk/23.1.7779620
 android.arch = arm64-v8a
 android.accept_sdk_license = True
 android.sdk_tools = cmdline-tools
