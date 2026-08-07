@@ -4,6 +4,7 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-22.04
+      
     steps:
       - uses: actions/checkout@v4
       
@@ -12,19 +13,23 @@ jobs:
         with:
           python-version: '3.11'
           
-      - name: Install dependencies
+      - name: Install system deps
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk
           pip install buildozer cython
           
-      - name: Build APK part 1 - Download SDK
+      - name: Step 1 - Let buildozer download SDK
         run: buildozer android debug --no-cache || true
+        # The "|| true" means don't fail even if it errors here
           
-      - name: Accept licenses for buildozer SDK
+      - name: Step 2 - Accept licenses for buildozer SDK
         run: yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
           
-      - name: Build APK part 2 - Compile
+      - name: Step 3 - Install build-tools 33.0.2 specifically
+        run: /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33"
+          
+      - name: Step 4 - Build APK for real
         run: buildozer android debug
         
       - name: Upload APK
