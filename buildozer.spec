@@ -24,3 +24,4 @@ android.sdk_tools = cmdline-tools
 android.build_tools_version = 33.0.2
 android.sdk_path = /usr/local/lib/android/sdk
 android.ndk_path = /usr/local/lib/android/sdk/ndk/21.4.7075529
+android.skip_update = True
