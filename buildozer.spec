@@ -7,6 +7,8 @@ source.include_exts = py,png,jpg,kv,atlas,db
 version = 1.0.1
 requirements = python3,kivy==2.3.0,pillow,reportlab,requests,filetype,certifi
 orientation = portrait
+author = Joseph
+author.email = mbuijoseph51@gmail.com
 
 [buildozer]
 log_level = 2
@@ -19,6 +21,6 @@ android.ndk = 25b
 android.arch = arm64-v8a
 android.accept_sdk_license = True
 android.sdk_tools = cmdline-tools
-android.build_tools = 33.0.2
+android.build_tools_version = 33.0.2
 android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
 android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
