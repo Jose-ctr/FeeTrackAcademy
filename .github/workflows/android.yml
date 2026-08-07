@@ -44,10 +44,16 @@ jobs:
       - name: Download and install Android NDK r28c manually
         run: |
           mkdir -p $HOME/.buildozer/android/platform
-          wget -q https://dl.google.com/android/repository/android-ndk-r28c-linux.zip -O ndk-r28c.zip
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/android-ndk-r28c-linux-x86_64.zip -O ndk-r28c.zip
           unzip -q ndk-r28c.zip -d $HOME/.buildozer/android/platform
+          extracted=$(find $HOME/.buildozer/android/platform -maxdepth 1 -type d -name "android-ndk-*"! -path "$HOME/.buildozer/android/platform" | head -n 1)
+          if [ -n "$extracted" ]; then
+            mv "$extracted" "$HOME/.buildozer/android/platform/android-ndk-r28c"
+          fi
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
+          ls -la $HOME/.buildozer/android/platform
 
       - name: Install Android SDK command-line tools
         run: |
@@ -72,13 +78,14 @@ jobs:
             'platforms;android-33' \
             'build-tools;33.0.2'
 
-      - name: Install Python tools
+      - name: Install Python tools + python-for-android
         run: |
           python -m pip install --upgrade pip
           pip install buildozer==1.3.0 cython==0.29.33
+          pip install https://github.com/kivy/python-for-android/archive/stable.zip
 
       - name: Clean old build
-        run: rm -rf $HOME/.buildozer ./.buildozer
+        run: rm -rf $HOME/.buildozer./.buildozer
 
       - name: Build APK
         run: |
