@@ -9,43 +9,48 @@ jobs:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: actions/setup-java@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install system deps
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip curl lib32stdc++6 lib32z1
           pip install "buildozer==1.3.0" cython
 
-      - name: Accept Licenses + Install NDK
+      - name: Accept Android Licenses and Install SDK/NDK
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           
-          # FIX: Create license file directly instead of using yes pipe
+          # Create license file manually to avoid 'yes' pipe crash
           mkdir -p "$ANDROID_SDK_ROOT/licenses"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
           echo "d56f4a2092af4f3b3a8e8f9f5e0f1a2b3c4d5e6f" >> "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
           
-          # Install packages
+          # Install required packages. NDK version MUST match buildozer.spec
           sdkmanager "platforms;android-33" "build-tools;33.0.2" "ndk;21.4.7075529"
 
-      - name: Build APK
+      - name: Build APK with Buildozer
         shell: bash
         run: |
           set -euo pipefail
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
           buildozer -v android debug
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: FeeTrack-APK
