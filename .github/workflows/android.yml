@@ -1,53 +1,45 @@
-name: Build FeeTrack Kivy APK
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
+name: Build FeeTrack APK
+on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_VERSION: 25.2.9519653
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/25.2.9519653
-
+    runs-on: ubuntu-22.04
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install system dependencies
-      run: |
-        sudo apt update --fix-missing || true
-        sudo apt install -y git zip unzip openjdk-17-jdk autoconf automake libtool libtool-bin pkg-config build-essential cmake ninja-build libffi-dev libssl-dev zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 libreadline-dev libsqlite3-dev libbz2-dev liblzma-dev libjpeg-dev libfreetype6-dev || sudo apt --fix-broken install -y
-
-    - name: Install Android SDK + NDK 25b
-      run: |
-        mkdir -p "$ANDROID_SDK_ROOT"
-        cd /tmp && curl -fLo commandlinetools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-        mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
-        unzip -q commandlinetools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
-        mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-        yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" --licenses
-        "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-31" "build-tools;31.0.0" "ndk;25.2.9519653"
-
-    - name: Install Buildozer + Cython
-      run: |
-        python -m pip install --upgrade pip
-        pip install buildozer cython==0.29.33
-
-    - name: Build APK
-      run: buildozer -v android debug
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: FeeTrack-APK
-        path: bin/*.apk
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk
+          pip install buildozer cython
+          
+      - name: Set up Android SDK
+        run: |
+          echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
+          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          echo "PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+          
+      - name: Accept licenses and install build-tools
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          
+      - name: Add build-tools to PATH
+        run: echo "$ANDROID_SDK_ROOT/build-tools/33.0.2" >> $GITHUB_PATH
+          
+      - name: Build APK
+        run: buildozer -v android debug
+        
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FeeTrack-APK
+          path: bin/*.apk
