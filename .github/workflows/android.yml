@@ -12,8 +12,8 @@ jobs:
 
     env:
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: $HOME/Android/Sdk
+      ANDROID_HOME: $HOME/Android/Sdk
 
     steps:
       - name: Checkout
@@ -41,33 +41,33 @@ jobs:
             build-essential cmake \
             lib32stdc++6 lib32z1
 
-      - name: Download and install Android NDK r28c manually
+      - name: Download Android NDK r28c
         run: |
-          mkdir -p $HOME/.buildozer/android/platform
+          mkdir -p "$HOME/.buildozer/android/platform"
           cd /tmp
-          wget -q https://dl.google.com/android/repository/android-ndk-r28c-linux-x86_64.zip -O ndk-r28c.zip
-          unzip -q ndk-r28c.zip -d $HOME/.buildozer/android/platform
-          extracted=$(find $HOME/.buildozer/android/platform -maxdepth 1 -type d -name "android-ndk-*"! -path "$HOME/.buildozer/android/platform" | head -n 1)
-          if [ -n "$extracted" ]; then
+          wget -q https://dl.google.com/android/repository/android-ndk-r28c-linux-x86_64.zip -O ndk.zip
+          unzip -q ndk.zip -d "$HOME/.buildozer/android/platform"
+
+          extracted=$(find "$HOME/.buildozer/android/platform" -maxdepth 1 -type d -name 'android-ndk-*' ! -path "$HOME/.buildozer/android/platform" | head -n 1)
+          if [ -n "$extracted" ] && [ "$extracted" != "$HOME/.buildozer/android/platform/android-ndk-r28c" ]; then
             mv "$extracted" "$HOME/.buildozer/android/platform/android-ndk-r28c"
           fi
+
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
           echo "ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
-          ls -la $HOME/.buildozer/android/platform
 
       - name: Install Android SDK command-line tools
         run: |
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           cd /tmp
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
           unzip -q tools.zip
-          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
 
       - name: Accept Android licenses
         run: |
-          mkdir -p $ANDROID_SDK_ROOT/licenses
-          echo '24333f8a63b6825ea9c5514f83c2829b004d1fee' > $ANDROID_SDK_ROOT/licenses/android-sdk-license
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          mkdir -p "$ANDROID_SDK_ROOT/licenses"
           yes | sdkmanager --licenses || true
 
       - name: Install Android SDK packages
@@ -85,12 +85,13 @@ jobs:
           pip install https://github.com/kivy/python-for-android/archive/stable.zip
 
       - name: Clean old build
-        run: rm -rf $HOME/.buildozer./.buildozer
+        run: rm -rf "$HOME/.buildozer" ./.buildozer
 
       - name: Build APK
         run: |
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
           export ANDROID_NDK_HOME="$HOME/.buildozer/android/platform/android-ndk-r28c"
+          export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
           buildozer android debug
 
       - name: Upload APK
