@@ -34,7 +34,8 @@ jobs:
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
 
           cd /tmp
-          wget --tries=3 --timeout=60 https://dl.google.com/android/repository/commandlinetools-linux-latest.zip -O cmdtools.zip
+          # THIS IS THE NEW WORKING LINK FOR 2026
+          wget --tries=3 --timeout=60 https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
           unzip cmdtools.zip
           mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
 
@@ -47,18 +48,12 @@ jobs:
           yes | sdkmanager --sdk_root="$ANDROID_SDK_ROOT" --licenses
           sdkmanager --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;21.4.7075529"
 
-          ls -R "$ANDROID_SDK_ROOT" | sed -n '1,200p'
-
       - name: Build APK (verbose)
         shell: bash
         run: |
           set -euo pipefail
           set -x
           export PATH="$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools"
-          echo "JAVA_HOME=$JAVA_HOME"
-          echo "PATH=$PATH"
-          java -version
-          sdkmanager --version || true
           buildozer -v android debug
 
       - name: Upload APK
