@@ -40,7 +40,7 @@ jobs:
       - name: Cache Buildozer
         uses: actions/cache@v4
         with:
-          path: .buildozer
+          path:.buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
       - name: Download and Install Android SDK + NDK 28c
@@ -51,15 +51,30 @@ jobs:
           unzip -q commandlinetools-linux-11076708_latest.zip -d $ANDROID_SDK_ROOT/cmdline-tools
           mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
           
-          # Accept licenses
+          # Accept ALL licenses
           mkdir -p $ANDROID_SDK_ROOT/licenses
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > $ANDROID_SDK_ROOT/licenses/android-sdk-preview-license
+          echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > $ANDROID_SDK_ROOT/licenses/android-googletv-license
+          echo "84831b9409646a918e30573bab4c9c91346d8ebd" > $ANDROID_SDK_ROOT/licenses/android-googletv-2-license
           
-          # Install SDK + NDK 28c
+          # Accept licenses interactively then install
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;28.0.12433566"
           yes | sdkmanager --licenses
+          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;28.0.12433566"
           
           # Verify NDK installed
           echo "NDK Path:"
-          ls
+          ls $ANDROID_NDK_HOME
+
+      - name: Build APK with Buildozer
+        run: |
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
+          buildozer -v android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FeeTrack-1.0.1-APK
+          path: bin/*.apk
+          retention-days: 7
