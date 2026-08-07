@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
 
-    env:
+    env: # HII HAPA NDIO FIX NDOGO
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       ANDROID_SDK_ROOT: $HOME/Android/Sdk
       ANDROID_HOME: $HOME/Android/Sdk
@@ -31,37 +31,26 @@ jobs:
           java-version: '17'
 
       - name: Install system packages
-        run: |
-          sudo apt update
-          sudo apt install -y \
-            git zip unzip wget curl \
-            autoconf automake libtool pkg-config \
-            zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
-            libffi-dev libssl-dev libsqlite3-dev \
-            build-essential cmake \
-            lib32stdc++6 lib32z1
+        run: sudo apt update && sudo apt install -y git zip unzip curl autoconf automake libtool pkg-config zlib1g-dev libncurses6 libncurses-dev libtinfo6 libffi-dev libssl-dev libsqlite3-dev build-essential cmake lib32stdc++6 lib32z1
 
       - name: Download Android NDK r28c
         run: |
+          set -euo pipefail
           mkdir -p "$HOME/.buildozer/android/platform"
           cd /tmp
-          wget -q https://dl.google.com/android/repository/android-ndk-r28c-linux-x86_64.zip -O ndk.zip
+          curl -fSL --retry 3 -o ndk.zip "https://dl.google.com/android/repository/android-ndk-r28c-linux-x86_64.zip"
           unzip -q ndk.zip -d "$HOME/.buildozer/android/platform"
-
-          extracted=$(find "$HOME/.buildozer/android/platform" -maxdepth 1 -type d -name 'android-ndk-*' ! -path "$HOME/.buildozer/android/platform" | head -n 1)
-          if [ -n "$extracted" ] && [ "$extracted" != "$HOME/.buildozer/android/platform/android-ndk-r28c" ]; then
-            mv "$extracted" "$HOME/.buildozer/android/platform/android-ndk-r28c"
-          fi
-
+          mv "$HOME/.buildozer/android/platform/android-ndk-r28c" "$HOME/.buildozer/android/platform/android-ndk-r28c" 2>/dev/null || mv $(find "$HOME/.buildozer/android/platform" -maxdepth 1 -type d -name 'android-ndk-*' | head -n 1) "$HOME/.buildozer/android/platform/android-ndk-r28c"
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
-          echo "ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
 
       - name: Install Android SDK command-line tools
         run: |
+          set -euo pipefail
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           cd /tmp
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+          curl -fSL --retry 3 -o tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
           unzip -q tools.zip
+          rm -rf "$ANDROID_SDK_ROOT/cmdline-tools/latest"
           mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
 
       - name: Accept Android licenses
@@ -73,10 +62,7 @@ jobs:
       - name: Install Android SDK packages
         run: |
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          sdkmanager --install \
-            'platform-tools' \
-            'platforms;android-33' \
-            'build-tools;33.0.2'
+          sdkmanager --install 'platform-tools' 'platforms;android-33' 'build-tools;33.0.2'
 
       - name: Install Python tools + python-for-android
         run: |
@@ -90,8 +76,6 @@ jobs:
       - name: Build APK
         run: |
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
-          export ANDROID_NDK_HOME="$HOME/.buildozer/android/platform/android-ndk-r28c"
-          export ANDROID_NDK_ROOT="$ANDROID_NDK_HOME"
           buildozer android debug
 
       - name: Upload APK
