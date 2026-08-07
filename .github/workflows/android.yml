@@ -4,11 +4,6 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-22.04
-    env:
-      ANDROIDSDK: /home/runner/Android/Sdk
-      ANDROIDNDK: /home/runner/Android/Sdk/ndk/23.1.7779620
-      ANDROIDAPI: 33
-      
     steps:
       - uses: actions/checkout@v4
       
@@ -23,28 +18,14 @@ jobs:
           sudo apt-get install -y git zip unzip openjdk-17-jdk
           pip install buildozer cython
           
-      - name: Wipe buildozer cache
-        run: rm -rf ~/.buildozer
+      - name: Build APK part 1 - Download SDK
+        run: buildozer android debug --no-cache || true
           
-      - name: Set up Android SDK
-        run: |
-          echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          curl -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          echo "PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
+      - name: Accept licenses for buildozer SDK
+        run: yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
           
-      - name: Accept licenses and install build-tools
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;23.1.7779620"
-          
-      - name: Add build-tools to PATH
-        run: echo "$ANDROID_SDK_ROOT/build-tools/33.0.2" >> $GITHUB_PATH
-          
-      - name: Build APK
-        run: buildozer android debug --no-cache
+      - name: Build APK part 2 - Compile
+        run: buildozer android debug
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
