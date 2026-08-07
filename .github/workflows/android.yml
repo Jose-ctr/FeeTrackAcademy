@@ -24,7 +24,7 @@ jobs:
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
           cd /tmp
-          wget https://dl.google.com/android/repository/commandlinetools-linux-947386_latest.zip -O cmdtools.zip
+          wget -q --show-progress --tries=3 --timeout=30 https://dl.google.com/android/repository/commandlinetools-linux-latest.zip -O cmdtools.zip
           unzip -q cmdtools.zip
           mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
           export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
