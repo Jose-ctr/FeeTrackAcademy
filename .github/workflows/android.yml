@@ -1,5 +1,7 @@
 name: Build FeeTrack APK
-on: [push]
+on: 
+  push:
+    branches: [ main ]
 
 jobs:
   build:
@@ -12,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -27,6 +29,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip curl lib32stdc++6 lib32z1
+          pip install --upgrade pip
           pip install "buildozer==1.3.0" cython
 
       - name: Accept Android Licenses and Install SDK/NDK
@@ -35,12 +38,11 @@ jobs:
           set -euo pipefail
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           
-          # Create license file manually to avoid 'yes' pipe crash
+          # Create license file to skip interactive prompt
           mkdir -p "$ANDROID_SDK_ROOT/licenses"
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
-          echo "d56f4a2092af4f3b3a8e8f9f5e0f1a2b3c4d5e6f" >> "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
           
-          # Install required packages. NDK version MUST match buildozer.spec
+          # Install SDK packages. NDK version MUST match buildozer.spec
           sdkmanager "platforms;android-33" "build-tools;33.0.2" "ndk;21.4.7075529"
 
       - name: Build APK with Buildozer
@@ -55,3 +57,4 @@ jobs:
         with:
           name: FeeTrack-APK
           path: bin/*.apk
+          retention-days: 7
