@@ -29,7 +29,13 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          yes | sdkmanager --licenses
+          
+          # FIX: Create license file directly instead of using yes pipe
+          mkdir -p "$ANDROID_SDK_ROOT/licenses"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
+          echo "d56f4a2092af4f3b3a8e8f9f5e0f1a2b3c4d5e6f" >> "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
+          
+          # Install packages
           sdkmanager "platforms;android-33" "build-tools;33.0.2" "ndk;21.4.7075529"
 
       - name: Build APK
