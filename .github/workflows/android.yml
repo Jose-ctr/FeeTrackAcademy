@@ -4,24 +4,39 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+      ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Install system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip openjdk-17-jdk
+          sudo apt-get install -y git zip unzip openjdk-17-jdk wget
           pip install buildozer cython
-      - name: Build SDK and Accept Licenses
+
+      - name: Install Android SDK + Accept Licenses
         run: |
-          buildozer android debug --no-cache || true
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/licenses
-          echo "8933bad161af4178b1185d1a37c4e3d9edafba9b" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33" --sdk_root=/home/runner/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd /tmp
+          wget https://dl.google.com/android/repository/commandlinetools-linux-947386_latest.zip -O cmdtools.zip
+          unzip -q cmdtools.zip
+          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin
+          mkdir -p $ANDROID_SDK_ROOT/licenses
+          echo "8933bad161af4178b1185d1a37c4e3d9edafba9b" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
       - name: Build APK
-        run: buildozer android debug
+        run: |
+          export PATH=$PATH:$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools
+          buildozer android debug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
