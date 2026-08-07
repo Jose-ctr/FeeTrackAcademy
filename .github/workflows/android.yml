@@ -4,6 +4,11 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-22.04
+    env:
+      ANDROIDSDK: /home/runner/Android/Sdk
+      ANDROIDNDK: /home/runner/Android/Sdk/ndk/23.1.7779620
+      ANDROIDAPI: 33
+      
     steps:
       - uses: actions/checkout@v4
       
@@ -17,6 +22,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip unzip openjdk-17-jdk
           pip install buildozer cython
+          
+      - name: Wipe buildozer cache
+        run: rm -rf ~/.buildozer
           
       - name: Set up Android SDK
         run: |
@@ -36,11 +44,7 @@ jobs:
         run: echo "$ANDROID_SDK_ROOT/build-tools/33.0.2" >> $GITHUB_PATH
           
       - name: Build APK
-        run: buildozer -v android debug
-        env:
-          ANDROIDSDK: /home/runner/Android/Sdk
-          ANDROIDNDK: /home/runner/Android/Sdk/ndk/23.1.7779620
-          ANDROIDAPI: 33
+        run: buildozer android debug --no-cache
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
