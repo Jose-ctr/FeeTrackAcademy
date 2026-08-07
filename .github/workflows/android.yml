@@ -1,5 +1,6 @@
-name: Build FeeTrack APK
-on: 
+name: Android Build
+
+on:
   push:
     branches: [ main ]
   workflow_dispatch:
@@ -8,72 +9,88 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
+
     env:
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       ANDROID_HOME: /usr/local/lib/android/sdk
-      ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.0.12433566
-      ANDROID_NDK_ROOT: /usr/local/lib/android/sdk/ndk/28.0.12433566
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
-      - name: Install System Packages
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git zip unzip wget autoconf automake libtool pkg-config zlib1g-dev libncurses6 libncurses-dev libtinfo6 libffi-dev libssl-dev libsqlite3-dev build-essential cmake lib32stdc++6 lib32z1
-
-      - name: Install Python Packages
-        run: |
-          python -m pip install --upgrade pip
-          pip install "buildozer==1.3.0" cython==0.29.33
-
-      - name: Cache Buildozer
-        uses: actions/cache@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          path: .buildozer
-          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+          distribution: temurin
+          java-version: '17'
 
-      - name: Download and Install Android SDK + NDK 28c
+      - name: Install system packages
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git zip unzip wget curl \
+            autoconf automake libtool pkg-config \
+            zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
+            libffi-dev libssl-dev libsqlite3-dev \
+            build-essential cmake \
+            lib32stdc++6 lib32z1
+
+      - name: Download and install Android NDK r28c manually
+        run: |
+          mkdir -p $HOME/.buildozer/android/platform
+          wget -q https://dl.google.com/android/repository/android-ndk-r28c-linux.zip -O ndk-r28c.zip
+          unzip -q ndk-r28c.zip -d $HOME/.buildozer/android/platform
+          echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
+          echo "ANDROID_NDK_ROOT=$HOME/.buildozer/android/platform/android-ndk-r28c" >> $GITHUB_ENV
+          ls $HOME/.buildozer/android/platform/android-ndk-r28c
+
+      - name: Install Android SDK command-line tools
         run: |
           mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
-          
-          mkdir -p $ANDROID_SDK_ROOT/licenses
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > $ANDROID_SDK_ROOT/licenses/android-sdk-license
-          
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          yes | sdkmanager --licenses
-          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2" "ndk;28.0.12433566"
-          
-          echo "Verifying NDK 28c:"
-          ls $ANDROID_NDK_HOME
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+          unzip -q tools.zip
+          mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
 
-      - name: Build APK with Buildozer
+      - name: Accept Android licenses
+        run: |
+          mkdir -p $ANDROID_SDK_ROOT/licenses
+          echo '24333f8a63b6825ea9c5514f83c2829b004d1fee' > $ANDROID_SDK_ROOT/licenses/android-sdk-license
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --licenses || true
+
+      - name: Install Android SDK packages
+        run: |
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          sdkmanager --install \
+            'platform-tools' \
+            'platforms;android-33' \
+            'build-tools;33.0.2'
+
+      - name: Install Python tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install buildozer==1.3.0 cython==0.29.33
+
+      - name: Clean old build
+        run: rm -rf.buildozer
+
+      - name: Build APK
         env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/28.0.12433566
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
         run: |
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH"
-          buildozer -v android debug
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FeeTrack-1.0.1-APK
+          name: FeeTrack-APK
           path: bin/*.apk
           retention-days: 7
