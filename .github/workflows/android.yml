@@ -10,8 +10,6 @@ jobs:
     timeout-minutes: 120
     env:
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
-      ANDROID_SDK_ROOT: $HOME/Android/Sdk
-      ANDROID_HOME: $HOME/Android/Sdk
 
     steps:
       - uses: actions/checkout@v4
@@ -42,11 +40,17 @@ jobs:
 
       - name: Install Android SDK command-line tools
         run: |
+          set -euo pipefail
+          export ANDROID_SDK_ROOT="$HOME/Android/Sdk"
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           cd /tmp
-          curl -fSL --retry 3 -o tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          unzip -q tools.zip
+          curl -fSL --retry 3 --retry-delay 5 -o tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -o tools.zip
+          rm -rf "$ANDROID_SDK_ROOT/cmdline-tools/latest"
           mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          ls -la "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
       - name: Accept Android licenses
         run: |
