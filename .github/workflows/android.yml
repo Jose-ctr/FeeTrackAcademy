@@ -21,13 +21,17 @@ jobs:
           
       - name: Step 1 - Let buildozer download SDK
         run: buildozer android debug --no-cache || true
-        # The "|| true" means don't fail even if it errors here
           
-      - name: Step 2 - Accept licenses for buildozer SDK
-        run: yes | /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+      - name: Step 2 - Accept licenses for buildozer SDK [FIXED]
+        run: |
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk/licenses
+          echo "8933bad161af4178b1185d1a37c4e3d9edafba9b" > /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" >> /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo "d56f518655454452a753f1dc614fdf4b5302a8dc" >> /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          touch /home/runner/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
           
       - name: Step 3 - Install build-tools 33.0.2 specifically
-        run: /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33"
+        run: /home/runner/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33" --sdk_root=/home/runner/.buildozer/android/platform/android-sdk
           
       - name: Step 4 - Build APK for real
         run: buildozer android debug
