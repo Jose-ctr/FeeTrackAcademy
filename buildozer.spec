@@ -22,4 +22,5 @@ android.arch = arm64-v8a
 android.accept_sdk_license = True
 android.sdk_tools = cmdline-tools
 android.build_tools_version = 33.0.2
-android.skip_update = False
+android.skip_update = True
+p4a.branch = develop
