@@ -24,7 +24,8 @@ android.arch = arm64-v8a
 android.accept_sdk_license = True
 android.build_tools_version = 33.0.2
 android.skip_update = True
+android.gradle_version = 8.2.0
 
-# P4A stable branch
-p4a.branch = stable
+# Use P4A master branch - THIS IS THE FIX
+p4a.branch = master
 p4a.source_dir =
