@@ -39,18 +39,21 @@ jobs:
       - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.2" \
+            "ndk;28.0.13004108"
 
-          # Retry downloads up to 3 times in case of network interruption
-          for i in 1 2 3; do
-            sdkmanager \
-              "platform-tools" \
-              "platforms;android-33" \
-              "build-tools;33.0.2" \
-              "ndk;28.0.13004108" && break
-
-            echo "SDK download failed, retrying in 15 seconds..."
-            sleep 15
-          done
+      - name: Export Android paths
+        run: |
+          echo "ANDROIDSDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROIDNDK=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
+          echo "P4A_SDK_DIR=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "P4A_NDK_DIR=$ANDROID_NDK_HOME" >> $GITHUB_ENV
 
       - name: Install Buildozer
         run: |
@@ -65,18 +68,15 @@ jobs:
           rm -rf ~/.android/build-cache
           rm -rf ~/.gradle/caches
 
-      - name: Build APK
-        env:
-          ANDROIDSDK: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROIDNDK: ${{ env.ANDROID_NDK_HOME }}
-          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
-          P4A_SDK_DIR: ${{ env.ANDROID_SDK_ROOT }}
-          P4A_NDK_DIR: ${{ env.ANDROID_NDK_HOME }}
+      - name: Verify Android paths
         run: |
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
+          ls -la $ANDROID_SDK_ROOT
+          ls -la $ANDROID_NDK_HOME
+
+      - name: Build APK
+        run: |
           buildozer -v android debug --storage-dir=.buildozer
 
       - name: Upload APK
