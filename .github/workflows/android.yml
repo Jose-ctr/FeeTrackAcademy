@@ -1,4 +1,4 @@
-name: Build FeeTrack APK
+name: Android Build
 
 on:
   push:
@@ -8,41 +8,62 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 120
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Setup Java
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install system dependencies
+      - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip unzip python3-pip \
-            build-essential autoconf automake libtool pkg-config \
-            zlib1g-dev libncurses6 libncurses-dev libtinfo6 cmake \
-            libffi-dev libssl-dev
+          sudo apt-get install -y \
+            git zip unzip autoconf automake libtool pkg-config \
+            zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
+            cmake libffi-dev libssl-dev build-essential
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android packages
+        run: |
+          sdkmanager --licenses || true
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.2" \
+            "ndk;28.0.13004108"
 
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer==1.5.0 cython==0.29.36
+          pip install buildozer cython==0.29.36
+
+      - name: Clean old build cache
+        run: rm -rf .buildozer
 
       - name: Build APK
-        run: |
-          buildozer android debug
+        env:
+          ANDROIDSDK: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          ANDROIDNDK: ${{ env.ANDROID_NDK_HOME }}
+        run: buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: feetrack-apk
+          name: FeeTrack-APK
           path: bin/*.apk
