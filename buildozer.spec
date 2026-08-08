@@ -13,6 +13,8 @@ author.email = mbuijoseph51@gmail.com
 osx.python_version = 3
 osx.kivy_version = 2.3.0
 
+Android settings
+
 android.api = 33
 android.minapi = 24
 android.ndk = 28c
