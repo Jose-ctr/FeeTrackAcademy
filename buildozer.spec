@@ -5,7 +5,7 @@ package.domain = com.josephmbui
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,db
 version = 1.0.1
-requirements = python3==3.11.8,kivy==2.3.0
+requirements = python3==3.11.4,kivy==2.3.0
 author = Joseph
 author.email = mbuijoseph51@gmail.com
 osx.python_version = 3
