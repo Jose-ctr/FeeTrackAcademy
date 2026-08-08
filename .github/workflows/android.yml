@@ -11,7 +11,7 @@ jobs:
     env:
       JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
       ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk-r27c
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk-r28c
 
     steps:
       - name: Checkout code
@@ -33,11 +33,11 @@ jobs:
           sudo apt update
           sudo apt install -y git zip unzip curl autoconf automake libtool pkg-config zlib1g-dev libncurses6 libncurses-dev libtinfo6 libffi-dev libssl-dev libsqlite3-dev build-essential cmake
 
-      - name: Download Android NDK r27c
+      - name: Download Android NDK r28c
         run: |
           set -euo pipefail
           cd ${{ github.workspace }}
-          curl -fSL --retry 3 --retry-delay 5 -o ndk.zip "https://dl.google.com/android/repository/android-ndk-r27c-linux.zip"
+          curl -fSL --retry 3 -o ndk.zip "https://dl.google.com/android/repository/android-ndk-r28c-linux.zip"
           unzip -q ndk.zip
           rm ndk.zip
 
@@ -46,11 +46,31 @@ jobs:
           set -euo pipefail
           mkdir -p "$ANDROID_SDK_ROOT"
           cd /tmp
-          curl -fSL --retry 3 --retry-delay 5 -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          curl -fSL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
           unzip -q cmdline-tools.zip
           mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
           rm cmdline-tools.zip
           
-          # Force accept ALL licenses to bypass prompt
-          mkdir -p "$ANDROID
+          # Accept licenses
+          mkdir -p "$ANDROID_SDK_ROOT/licenses"
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb10ac793032b7e1a6f3" > "$ANDROID_SDK_ROOT/licenses/android-sdk-preview-license"
+          
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+
+      - name: Install Buildozer
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Build APK with Buildozer
+        run: |
+          buildozer -v android debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FeeTrack-APK
+          path: bin/*.apk
