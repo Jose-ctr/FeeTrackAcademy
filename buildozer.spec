@@ -8,6 +8,9 @@ version = 1.0.1
 requirements = python3,kivy==2.3.0,sqlite3,reportlab
 author = Joseph
 author.email = mbuijoseph51@gmail.com
+osx.python_version = 3
+osx.kivy_version = 2.3.0
+android.arch = arm64-v8a
 
 [buildozer]
 log_level = 2
@@ -24,4 +27,7 @@ android.build_tools_version = 33.0.2
 android.add_build_tools = True
 android.skip_update = True
 android.gradle_version = 8.2.0
+android.logcat_filters = *:S python:D
+
 p4a.branch = master
+p4a.source_dir =
