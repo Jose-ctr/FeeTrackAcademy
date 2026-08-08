@@ -41,23 +41,19 @@ jobs:
           rm ndk.zip
           echo "ANDROID_NDK_HOME=$HOME/.buildozer/android/platform/android-ndk-r27c" >> $GITHUB_ENV
           echo "ANDROID_NDK=$HOME/.buildozer/android/platform/android-ndk-r27c" >> $GITHUB_ENV
-          echo "Updated ANDROID_NDK_HOME and ANDROID_NDK"
 
-      - name: Download Android SDK Build-Tools
+      - name: Setup Android SDK
         run: |
           set -euo pipefail
-          mkdir -p "$HOME/.buildozer/android/platform/android-sdk/build-tools"
-          
-          # Download cmdline-tools
+          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
           cd /tmp
           curl -fSL --retry 3 --retry-delay 5 -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-          unzip -q cmdline-tools.zip -d "$HOME/.buildozer/android/platform/android-sdk"
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
           rm cmdline-tools.zip
-          
-          # Accept licenses and install build-tools
-          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          yes | "$ANDROID_SDK_ROOT/cmdline-tools/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" "build-tools;35.0.0" "platforms;android-35"
-          
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-31" "build-tools;31.0.0"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
 
       - name: Install Buildozer
@@ -74,4 +70,3 @@ jobs:
         with:
           name: FeeTrackAcademy-APK
           path: bin/*.apk
-          
