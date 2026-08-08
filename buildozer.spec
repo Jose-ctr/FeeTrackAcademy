@@ -6,8 +6,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,db
 version = 1.0.1
 
-Use Python version supported by Kivy 2.3.0
-
+# Python and Kivy
 requirements = python3==3.11.8,kivy==2.3.0
 
 orientation = portrait
@@ -15,11 +14,11 @@ orientation = portrait
 author = Joseph
 author.email = mbuijoseph51@gmail.com
 
+# macOS settings
 osx.python_version = 3
 osx.kivy_version = 2.3.0
 
-Android settings
-
+# Android settings
 android.api = 33
 android.minapi = 24
 android.ndk = 28.0.13004108
