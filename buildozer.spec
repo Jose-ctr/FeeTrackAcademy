@@ -24,7 +24,4 @@ android.build_tools_version = 33.0.2
 android.add_build_tools = True
 android.skip_update = True
 android.gradle_version = 8.2.0
-
-# Use P4A master branch - THIS IS THE FIX
 p4a.branch = master
-p4a.source_dir =
