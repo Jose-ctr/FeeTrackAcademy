@@ -11,18 +11,15 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
       - name: Install system packages
@@ -36,9 +33,9 @@ jobs:
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android packages
+      - name: Install SDK packages
         run: |
-          sdkmanager --licenses || true
+          yes | sdkmanager --licenses
           sdkmanager \
             "platform-tools" \
             "platforms;android-33" \
@@ -48,19 +45,22 @@ jobs:
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer cython==0.29.36
+          pip install buildozer==1.5.0 cython==0.29.36
 
-      - name: Clean old build cache
-        run: rm -rf .buildozer
+      - name: Clean build cache
+        run: |
+          rm -rf .buildozer
+          rm -rf ~/.buildozer
 
       - name: Build APK
         env:
           ANDROIDSDK: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           ANDROIDNDK: ${{ env.ANDROID_NDK_HOME }}
-        run: buildozer android debug
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+        run: |
+          buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
