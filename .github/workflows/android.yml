@@ -18,13 +18,13 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Accept Android Licenses
-      run: yes | sdkmanager --licenses || true
-
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential libffi-dev libssl-dev
+
+    - name: Accept Android Licenses
+      run: yes | sdkmanager --licenses || true
 
     - name: Build with Buildozer
       uses: ArtemSBit/buildozer-action@v1
