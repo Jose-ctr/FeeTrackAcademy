@@ -23,11 +23,4 @@ android.ndk = 28c
 android.archs = arm64-v8a
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.accept_sdk_license = True
-android.build_tools_version = 33.0.2
-android.add_build_tools = True
-android.skip_update = True
-android.gradle_version = 8.2.0
 android.logcat_filters = *:S python:D
-
-p4a.branch = master
-p4a.source_dir =
