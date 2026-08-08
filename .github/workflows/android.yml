@@ -52,27 +52,5 @@ jobs:
           mv cmdline-tools "$ANDROID_SDK_ROOT/cmdline-tools/latest"
           rm cmdline-tools.zip
           
-          # Bypass license prompt
-          mkdir -p "$ANDROID_SDK_ROOT/licenses"
-          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
-          
-          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
-          sdkmanager --install \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2"
-
-      - name: Install Buildozer
-        run: |
-          pip install --upgrade pip
-          pip install buildozer cython
-
-      - name: Build APK with Buildozer
-        run: |
-          buildozer -v android debug
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrack-APK
-          path: bin/*.apk
+          # Force accept ALL licenses to bypass prompt
+          mkdir -p "$ANDROID
