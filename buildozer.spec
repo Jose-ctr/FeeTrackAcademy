@@ -11,6 +11,8 @@ author.email = mbuijoseph51@gmail.com
 osx.python_version = 3
 osx.kivy_version = 2.3.0
 android.arch = arm64-v8a
+android.sdk = 33
+android.build_tools = 33.0.2
 
 [buildozer]
 log_level = 2
