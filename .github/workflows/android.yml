@@ -29,7 +29,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip autoconf automake libtool pkg-config \
+            git zip unzip wget curl autoconf automake libtool pkg-config \
             zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
             cmake libffi-dev libssl-dev build-essential
 
@@ -39,11 +39,18 @@ jobs:
       - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "ndk;28.0.13004108"
+
+          # Retry downloads up to 3 times in case of network interruption
+          for i in 1 2 3; do
+            sdkmanager \
+              "platform-tools" \
+              "platforms;android-33" \
+              "build-tools;33.0.2" \
+              "ndk;28.0.13004108" && break
+
+            echo "SDK download failed, retrying in 15 seconds..."
+            sleep 15
+          done
 
       - name: Install Buildozer
         run: |
@@ -66,7 +73,7 @@ jobs:
           ANDROIDNDK: ${{ env.ANDROID_NDK_HOME }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
         run: |
-          buildozer -v android debug
+          buildozer -v android debug --storage-dir=.buildozer
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
