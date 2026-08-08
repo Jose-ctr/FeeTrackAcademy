@@ -72,7 +72,11 @@ jobs:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
           ANDROIDNDK: ${{ env.ANDROID_NDK_HOME }}
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          P4A_SDK_DIR: ${{ env.ANDROID_SDK_ROOT }}
+          P4A_NDK_DIR: ${{ env.ANDROID_NDK_HOME }}
         run: |
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
           buildozer -v android debug --storage-dir=.buildozer
 
       - name: Upload APK
