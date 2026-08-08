@@ -42,18 +42,24 @@ jobs:
           sdkmanager \
             "platform-tools" \
             "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "ndk;28.0.13004108"
+            "build-tools;33.0.2"
 
-      - name: Export Android paths
+      - name: Download Android NDK manually
+        run: |
+          mkdir -p $HOME/android-ndk
+          cd $HOME/android-ndk
+          wget -O ndk.zip https://dl.google.com/android/repository/android-ndk-r28.0.13004108-linux.zip
+          unzip -q ndk.zip
+          echo "ANDROID_NDK_HOME=$HOME/android-ndk/android-ndk-r28.0.13004108" >> $GITHUB_ENV
+          echo "ANDROIDNDK=$HOME/android-ndk/android-ndk-r28.0.13004108" >> $GITHUB_ENV
+          echo "P4A_NDK_DIR=$HOME/android-ndk/android-ndk-r28.0.13004108" >> $GITHUB_ENV
+
+      - name: Export Android SDK path
         run: |
           echo "ANDROIDSDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROIDNDK=$ANDROID_NDK_HOME" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME" >> $GITHUB_ENV
           echo "P4A_SDK_DIR=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "P4A_NDK_DIR=$ANDROID_NDK_HOME" >> $GITHUB_ENV
 
       - name: Install Buildozer
         run: |
