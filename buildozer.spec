@@ -5,18 +5,14 @@ package.domain = com.josephmbui
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,db
 version = 1.0.1
-
-# Kivy + Python
 requirements = python3==3.11.8,kivy==2.3.0
 
 author = Joseph
 author.email = mbuijoseph51@gmail.com
 
-# Desktop settings
 osx.python_version = 3
 osx.kivy_version = 2.3.0
 
-# Android settings
 android.api = 33
 android.minapi = 24
 android.ndk = 28c
