@@ -2,28 +2,31 @@
 title = FeeTrack
 package.name = feetrackacademy
 package.domain = com.josephmbui
-source.dir =.
+source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,db
 version = 1.0.1
-requirements = python3==3.14.2,kivy==2.3.0,openssl==3.0.15
+
+Use Python version supported by Kivy 2.3.0
+
+requirements = python3==3.11.8,kivy==2.3.0
+
 orientation = portrait
+
 author = Joseph
 author.email = mbuijoseph51@gmail.com
+
 osx.python_version = 3
 osx.kivy_version = 2.3.0
-android.python.version = 3.14.2
 
-[android]
+Android settings
+
 android.api = 33
 android.minapi = 24
-android.ndk = 28c
+android.ndk = 28.0.13004108
 android.archs = arm64-v8a
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.accept_sdk_license = True
-android.build_tools_version = 33.0.2
-android.add_build_tools = True
 android.logcat_filters = *:S python:D
-p4a.branch = develop
 
 [buildozer]
 log_level = 2
