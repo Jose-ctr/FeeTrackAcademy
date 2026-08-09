@@ -9,102 +9,61 @@ jobs:
     timeout-minutes: 120
 
     steps:
-      # Checkout repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Python 3.11 (compatible with Kivy 2.3.0)
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Java 17
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # Linux build dependencies
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y git zip unzip autoconf libtool pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
             libffi-dev libssl-dev build-essential
 
-      # Buildozer + Cython
-      - name: Install Python packages
+      - name: Install Buildozer
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade pip
           python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
 
-      # Android SDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
 
-      # Required SDK packages
-      - name: Install Android SDK packages
+      - name: Install SDK packages
         run: |
           yes | sdkmanager --licenses
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "cmdline-tools;latest"
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      # Verify project files
-      - name: Verify project files
+      - name: Verify files
         run: |
-          echo "Repository contents:"
           ls -la
           test -f buildozer.spec
           test -f main.py
 
-      # Clean previous builds completely
-      - name: Clear old build cache
+      - name: Clean old builds
         run: |
           rm -rf .buildozer
           rm -rf ~/.buildozer
 
-      # Build APK
       - name: Build APK
-        env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
         run: |
           set -o pipefail
           buildozer -v android debug 2>&1 | tee buildozer-output.txt
 
-      # Show error if build fails
-      - name: Show last build lines
+      - name: Show final error
         if: failure()
         run: |
-          echo "===== LAST 120 LINES ====="
-          tail -n 120 buildozer-output.txt || true
+          echo "===== FINAL BUILD ERROR ====="
+          grep -nE "ERROR|Exception|Traceback|FAILED" buildozer-output.txt | tail -n 50 || true
+          echo "===== LAST 80 LINES ====="
+          tail -n 80 buildozer-output.txt || true
 
-      # Search for APK files
-      - name: Find APK files
-        if: always()
-        run: |
-          echo "Searching for APK files..."
-          find . -name "*.apk" | sort || true
-
-      # Upload APK
-      - name: Upload APK
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrack-debug-apk
-          path: |
-            bin/*.apk
-            .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
-            .buildozer/android/platform/build-*/dists/*/bin/*.apk
-          if-no-files-found: warn
-
-      # Upload build log
-      - name: Upload Build Log
+      - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
