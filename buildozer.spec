@@ -9,8 +9,8 @@ source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
 version = 1.0.0
 version.code = 1
 
-# Python 3.11 + Kivy 2.3.0 (stable Android combo)
-requirements = python3==3.11.8,kivy==2.3.0
+# Stable Android build combo
+requirements = python3==3.11.9,kivy==2.3.0,openssl
 
 orientation = portrait
 fullscreen = 0
@@ -18,11 +18,16 @@ fullscreen = 0
 author = Joseph Mbui
 author.email = mbuijoseph51@gmail.com
 
-# Android 11+
+# Android
 android.api = 33
-android.minapi = 30
+android.minapi = 24
 android.arch = arm64-v8a
+android.ndk = 28c
+android.build_tools_version = 34.0.0
 android.permissions = INTERNET
+
+# python-for-android
+p4a.branch = develop
 
 [buildozer]
 log_level = 2
