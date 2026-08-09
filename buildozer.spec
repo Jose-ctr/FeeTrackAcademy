@@ -9,7 +9,7 @@ source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
 version = 1.0.0
 version.code = 1
 
-# IMPORTANT: pin Python version compatible with Kivy 2.3.0
+# Compatible versions
 requirements = python3==3.11.8,kivy==2.3.0
 
 orientation = portrait
