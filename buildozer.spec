@@ -21,7 +21,7 @@ author.email = mbuijoseph51@gmail.com
 # Android
 android.api = 33
 android.minapi = 24
-android.arch = arm64-v8a
+android.archs = arm64-v8a
 android.ndk = 28c
 android.build_tools_version = 34.0.0
 android.permissions = INTERNET
