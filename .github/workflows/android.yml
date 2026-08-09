@@ -14,14 +14,14 @@ jobs:
     steps:
 
       # ==========================================
-      # CHECKOUT
+      # 1. CHECKOUT
       # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
 
       # ==========================================
-      # PYTHON
+      # 2. PYTHON 3.11
       # ==========================================
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,17 +30,17 @@ jobs:
 
 
       # ==========================================
-      # JAVA
+      # 3. JAVA 17
       # ==========================================
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
 
       # ==========================================
-      # SYSTEM PACKAGES
+      # 4. SYSTEM DEPENDENCIES
       # ==========================================
       - name: Install system dependencies
         run: |
@@ -66,7 +66,7 @@ jobs:
 
 
       # ==========================================
-      # BUILDOZER
+      # 5. INSTALL BUILDOZER
       # ==========================================
       - name: Install Buildozer
         run: |
@@ -79,7 +79,58 @@ jobs:
 
 
       # ==========================================
-      # CLEAN OLD BUILDS
+      # 6. VERIFY REPOSITORY
+      # ==========================================
+      - name: Verify project files
+        run: |
+          echo "=========================================="
+          echo "CURRENT DIRECTORY"
+          echo "=========================================="
+
+          pwd
+
+          echo ""
+          echo "=========================================="
+          echo "ROOT FILES"
+          echo "=========================================="
+
+          ls -la
+
+          echo ""
+          echo "=========================================="
+          echo "BUILDOZER SPEC LOCATION"
+          echo "=========================================="
+
+          find . \
+            -maxdepth 3 \
+            -type f \
+            -name "buildozer.spec" \
+            -print
+
+          echo ""
+          echo "=========================================="
+          echo "VERIFY buildozer.spec"
+          echo "=========================================="
+
+          test -f buildozer.spec
+
+          echo ""
+          echo "===== buildozer.spec CONTENT ====="
+
+          cat buildozer.spec
+
+          echo ""
+          echo "=========================================="
+          echo "VERIFY main.py"
+          echo "=========================================="
+
+          test -f main.py
+
+          ls -lh main.py
+
+
+      # ==========================================
+      # 7. CLEAN OLD BUILDOZER FILES
       # ==========================================
       - name: Clean Buildozer
         run: |
@@ -89,7 +140,7 @@ jobs:
 
 
       # ==========================================
-      # CREATE SDK
+      # 8. PREPARE ANDROID SDK
       # ==========================================
       - name: Prepare Android SDK
         run: |
@@ -104,7 +155,7 @@ jobs:
 
 
       # ==========================================
-      # DOWNLOAD COMMAND LINE TOOLS
+      # 9. INSTALL ANDROID COMMAND LINE TOOLS
       # ==========================================
       - name: Install Android command line tools
         run: |
@@ -138,13 +189,18 @@ jobs:
 
           rm -f "$SDK/commandlinetools.zip"
 
-          echo "Modern sdkmanager:"
-          ls -la \
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+
+          echo "$SDK/tools/bin" >> "$GITHUB_PATH"
+
+          echo "===== MODERN SDKMANAGER ====="
+
+          ls -lh \
             "$SDK/cmdline-tools/latest/bin/sdkmanager"
 
 
       # ==========================================
-      # CREATE LEGACY SDKMANAGER PATH
+      # 10. CREATE LEGACY SDKMANAGER PATH
       # ==========================================
       - name: Create sdkmanager compatibility path
         run: |
@@ -158,18 +214,14 @@ jobs:
             "$SDK/cmdline-tools/latest/bin/sdkmanager" \
             "$SDK/tools/bin/sdkmanager"
 
-          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$SDK/tools/bin" >> "$GITHUB_PATH"
+          echo "===== LEGACY SDKMANAGER ====="
 
-          echo "Legacy sdkmanager:"
-          ls -la "$SDK/tools/bin/sdkmanager"
-
-          echo "Modern sdkmanager:"
-          ls -la "$SDK/cmdline-tools/latest/bin/sdkmanager"
+          ls -lh \
+            "$SDK/tools/bin/sdkmanager"
 
 
       # ==========================================
-      # SDKMANAGER
+      # 11. VERIFY SDKMANAGER
       # ==========================================
       - name: Verify sdkmanager
         run: |
@@ -179,11 +231,13 @@ jobs:
 
           export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
 
+          echo "===== SDKMANAGER ====="
+
           "$SDK/tools/bin/sdkmanager" --version
 
 
       # ==========================================
-      # LICENSES
+      # 12. ACCEPT LICENSES
       # ==========================================
       - name: Accept Android licenses
         run: |
@@ -197,9 +251,9 @@ jobs:
 
 
       # ==========================================
-      # SDK PACKAGES
+      # 13. INSTALL ANDROID PACKAGES
       # ==========================================
-      - name: Install Android SDK packages
+      - name: Install Android packages
         run: |
           set -e
 
@@ -217,7 +271,7 @@ jobs:
 
 
       # ==========================================
-      # VERIFY AIDL
+      # 14. VERIFY AIDL
       # ==========================================
       - name: Verify AIDL
         run: |
@@ -225,16 +279,20 @@ jobs:
 
           SDK="$HOME/.buildozer/android/platform/android-sdk"
 
-          echo "===== SDK ====="
-          ls -la "$SDK"
+          echo "=========================================="
+          echo "BUILD TOOLS"
+          echo "=========================================="
 
-          echo "===== BUILD TOOLS ====="
           ls -la "$SDK/build-tools"
 
-          echo "===== AIDL ====="
+          echo ""
+          echo "=========================================="
+          echo "AIDL"
+          echo "=========================================="
+
           find "$SDK/build-tools" \
             -type f \
-            -name aidl \
+            -name "aidl" \
             -print
 
           test -f \
@@ -242,7 +300,7 @@ jobs:
 
 
       # ==========================================
-      # BUILD APK
+      # 15. BUILD APK
       # ==========================================
       - name: Build APK
         env:
@@ -264,40 +322,58 @@ jobs:
 
           export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
 
-          echo "================================"
+          echo "=========================================="
           echo "PYTHON"
-          echo "================================"
+          echo "=========================================="
+
           python --version
 
-          echo "================================"
+          echo ""
+          echo "=========================================="
           echo "JAVA"
-          echo "================================"
+          echo "=========================================="
+
           java -version
 
-          echo "================================"
+          echo ""
+          echo "=========================================="
           echo "SDKMANAGER"
-          echo "================================"
+          echo "=========================================="
+
           "$SDK/tools/bin/sdkmanager" --version
 
-          echo "================================"
+          echo ""
+          echo "=========================================="
           echo "AIDL"
-          echo "================================"
-          ls -la "$SDK/build-tools/34.0.0/aidl"
+          echo "=========================================="
 
-          echo "================================"
+          ls -lh \
+            "$SDK/build-tools/34.0.0/aidl"
+
+          echo ""
+          echo "=========================================="
+          echo "BUILDOZER SPEC"
+          echo "=========================================="
+
+          cat buildozer.spec
+
+          echo ""
+          echo "=========================================="
           echo "BUILD APK"
-          echo "================================"
+          echo "=========================================="
 
           buildozer -v android debug \
             --storage-dir=.buildozer
 
 
       # ==========================================
-      # CHECK APK
+      # 16. CHECK APK
       # ==========================================
       - name: Check APK
         run: |
-          echo "===== APK FILES ====="
+          echo "=========================================="
+          echo "APK FILES"
+          echo "=========================================="
 
           find . \
             -type f \
@@ -309,14 +385,16 @@ jobs:
             -name "*.apk" \
             | grep -q .; then
 
+            echo ""
             echo "ERROR: No APK was produced."
+            echo ""
 
             exit 1
           fi
 
 
       # ==========================================
-      # UPLOAD APK
+      # 17. UPLOAD APK
       # ==========================================
       - name: Upload APK
         uses: actions/upload-artifact@v4
