@@ -23,8 +23,8 @@ android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.accept_sdk_license = True
 android.logcat_filters = *:S python:D
 
-# IMPORTANT
-p4a.branch = stable
+# IMPORTANT: use develop branch for AAB support
+p4a.branch = develop
 
 [buildozer]
 log_level = 2
