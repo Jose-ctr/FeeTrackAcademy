@@ -13,7 +13,6 @@ version = 1.0.1
 requirements = python3,kivy==2.3.0
 
 orientation = portrait
-
 fullscreen = 0
 
 author = Joseph Mbui
