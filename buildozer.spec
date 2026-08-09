@@ -1,15 +1,16 @@
 [app]
-
 title = FeeTrack Academy
-package.name = feetrackacademy
+package.name = feetrack
 package.domain = com.josephmbui
 
 source.dir = .
-source.include_exts = py,png,jpg,jpeg,kv,atlas,db,ttf,xml
+source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
 
-version = 1.0.1
+version = 1.0.0
+version.code = 1
 
-requirements = python3,kivy==2.3.0
+# IMPORTANT: pin Python version compatible with Kivy 2.3.0
+requirements = python3==3.11.8,kivy==2.3.0
 
 orientation = portrait
 fullscreen = 0
@@ -17,21 +18,11 @@ fullscreen = 0
 author = Joseph Mbui
 author.email = mbuijoseph51@gmail.com
 
-
-[android]
-
+# Android 11+
 android.api = 33
 android.minapi = 30
-
-# Build only one architecture
-android.archs = arm64-v8a
-
+android.arch = arm64-v8a
 android.permissions = INTERNET
-android.accept_sdk_license = True
-android.build_tools_version = 34.0.0
-
 
 [buildozer]
-
 log_level = 2
-warn_on_root = 0
