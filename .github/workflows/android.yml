@@ -1,354 +1,74 @@
-name: Build FeeTrack APK
+name: Build Android APK
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 240
 
     steps:
-
-      # ==========================================
-      # CHECKOUT
-      # ==========================================
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
-      # ==========================================
-      # PYTHON
-      # ==========================================
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.11'
 
-
-      # ==========================================
-      # JAVA
-      # ==========================================
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-
-      # ==========================================
-      # SYSTEM DEPENDENCIES
-      # ==========================================
       - name: Install system dependencies
         run: |
           sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev cmake \
+            libffi-dev libssl-dev build-essential
 
-          sudo apt-get install -y \
-            git \
-            zip \
-            unzip \
-            wget \
-            curl \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            cmake \
-            build-essential \
-            libssl-dev \
-            zlib1g-dev \
-            libncurses6 \
-            libncurses-dev \
-            libtinfo6
-
-
-      # ==========================================
-      # INSTALL BUILDOZER
-      # ==========================================
-      - name: Install Buildozer
+      - name: Install Python packages
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install buildozer
-          python -m pip install "cython==0.29.37"
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install buildozer==1.5.0 cython==0.29.33 virtualenv
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      # ==========================================
-      # VERIFY PROJECT FILES
-      # ==========================================
-      - name: Verify project files
+      - name: Install required Android SDK packages
         run: |
-          echo "===== CURRENT DIRECTORY ====="
-          pwd
-
-          echo ""
-          echo "===== FILES ====="
-          ls -la
-
-          echo ""
-          echo "===== BUILDOZER SPEC ====="
-          test -f buildozer.spec
-          cat buildozer.spec
-
-          echo ""
-          echo "===== MAIN.PY ====="
-          test -f main.py
-          ls -lh main.py
-
-
-      # ==========================================
-      # CLEAN OLD BUILDS
-      # ==========================================
-      - name: Clean Buildozer
-        run: |
-          echo "Removing old Buildozer caches..."
-          rm -rf .buildozer
-          rm -rf ~/.buildozer
-          rm -rf /home/runner/.buildozer
-          rm -rf $GITHUB_WORKSPACE/.buildozer
-          rm -rf bin
-
-
-      # ==========================================
-      # PREPARE ANDROID SDK
-      # ==========================================
-      - name: Prepare Android SDK
-        run: |
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-          mkdir -p "$SDK"
-          echo "SDK=$SDK"
-
-
-      # ==========================================
-      # INSTALL COMMAND LINE TOOLS
-      # ==========================================
-      - name: Install Android command line tools
-        run: |
-          set -e
-
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-
-          mkdir -p "$SDK/cmdline-tools"
-          cd "$SDK"
-
-          wget -q \
-            https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
-            -O commandlinetools.zip
-
-          mkdir -p "$SDK/cmdline-tools/temp"
-
-          unzip -q commandlinetools.zip \
-            -d "$SDK/cmdline-tools/temp"
-
-          mkdir -p "$SDK/cmdline-tools/latest"
-
-          cp -R \
-            "$SDK/cmdline-tools/temp/cmdline-tools/"* \
-            "$SDK/cmdline-tools/latest/"
-
-          rm -rf "$SDK/cmdline-tools/temp"
-          rm -f "$SDK/commandlinetools.zip"
-
-          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$SDK/tools/bin" >> "$GITHUB_PATH"
-
-
-      # ==========================================
-      # CREATE LEGACY SDKMANAGER PATH
-      # ==========================================
-      - name: Create sdkmanager compatibility path
-        run: |
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-
-          mkdir -p "$SDK/tools/bin"
-
-          ln -sf \
-            "$SDK/cmdline-tools/latest/bin/sdkmanager" \
-            "$SDK/tools/bin/sdkmanager"
-
-
-      # ==========================================
-      # VERIFY SDKMANAGER
-      # ==========================================
-      - name: Verify sdkmanager
-        run: |
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-          export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
-
-          echo "===== SDKMANAGER ====="
-          "$SDK/tools/bin/sdkmanager" --version
-
-
-      # ==========================================
-      # ACCEPT LICENSES
-      # ==========================================
-      - name: Accept Android licenses
-        run: |
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-          export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
-
-          yes | "$SDK/tools/bin/sdkmanager" --licenses || true
-
-
-      # ==========================================
-      # INSTALL ANDROID PACKAGES
-      # ==========================================
-      - name: Install Android packages
-        run: |
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-          export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
-
-          "$SDK/tools/bin/sdkmanager" \
+          yes | sdkmanager --licenses
+          sdkmanager \
             "platform-tools" \
             "platforms;android-33" \
-            "build-tools;34.0.0" \
-            "ndk;28.0.13004108"
+            "build-tools;33.0.2" \
+            "cmdline-tools;latest"
 
-          yes | "$SDK/tools/bin/sdkmanager" --licenses || true
-
-
-      # ==========================================
-      # VERIFY AIDL
-      # ==========================================
-      - name: Verify AIDL
+      - name: Check buildozer.spec exists
         run: |
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
+          if [ ! -f buildozer.spec ]; then
+            echo "buildozer.spec not found"
+            exit 1
+          fi
 
-          echo "===== BUILD TOOLS ====="
-          ls -la "$SDK/build-tools"
-
-          echo ""
-          echo "===== AIDL ====="
-          find "$SDK/build-tools" -type f -name aidl -print
-
-          test -f "$SDK/build-tools/34.0.0/aidl"
-
-
-      # ==========================================
-      # BUILD APK
-      # ==========================================
       - name: Build APK
-        env:
-          ANDROID_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-          ANDROID_SDK_ROOT: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-          ANDROIDSDK: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-
-          ANDROIDNDK: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/ndk/28.0.13004108
-          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/ndk/28.0.13004108
-          ANDROID_NDK_ROOT: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/ndk/28.0.13004108
-
-          P4A_SDK_DIR: ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-          P4A_NDK_DIR: ${{ github.workspace }}/.buildozer/android/platform/android-sdk/ndk/28.0.13004108
-
         run: |
-          set -o pipefail
+          yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
 
-          SDK="$GITHUB_WORKSPACE/.buildozer/android/platform/android-sdk"
-          export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
-
-          echo "=========================================="
-          echo "BUILD ENVIRONMENT"
-          echo "=========================================="
-
-          echo "Python:"
-          python --version
-
-          echo ""
-          echo "Java:"
-          java -version
-
-          echo ""
-          echo "SDK:"
-          echo "$ANDROID_SDK_ROOT"
-
-          echo ""
-          echo "SDKMANAGER:"
-          "$SDK/tools/bin/sdkmanager" --version
-
-          echo ""
-          echo "AIDL:"
-          ls -lh "$SDK/build-tools/34.0.0/aidl"
-
-          echo ""
-          echo "===== ARCH SETTINGS ====="
-          grep -n "android.arch" buildozer.spec || true
-
-          echo ""
-          echo "=========================================="
-          echo "STARTING BUILDOZER"
-          echo "=========================================="
-
-          echo "Full Buildozer log is being saved to build.log"
-
-          buildozer -v android debug \
-            --storage-dir=.buildozer \
-            2>&1 | tee build.log
-
-
-      # ==========================================
-      # SHOW LAST LINES OF LOG
-      # ==========================================
-      - name: Show build log summary
-        if: always()
-        run: |
-          echo "===== LAST 120 LINES ====="
-
-          if [ -f build.log ]; then
-            tail -n 120 build.log
-          fi
-
-
-      # ==========================================
-      # FIND ERRORS
-      # ==========================================
-      - name: Find build errors
-        if: always()
-        run: |
-          echo "===== ERROR SUMMARY ====="
-
-          if [ -f build.log ]; then
-            grep -i -E "error|exception|failed|command failed|traceback" build.log | tail -n 80 || true
-          fi
-
-
-      # ==========================================
-      # CHECK APK
-      # ==========================================
-      - name: Check APK
-        if: always()
-        run: |
-          echo "===== APK FILES ====="
-
-          find . -type f -name "*.apk" -print
-
-          if find bin -type f -name "*.apk" | grep -q .; then
-            echo "APK FOUND"
-          else
-            echo "No APK produced"
-          fi
-
-
-      # ==========================================
-      # UPLOAD APK
-      # ==========================================
       - name: Upload APK
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: FeeTrack-APK
           path: bin/*.apk
-          if-no-files-found: error
+          if-no-files-found: warn
 
-
-      # ==========================================
-      # UPLOAD BUILD LOG
-      # ==========================================
-      - name: Upload build log
+      - name: Upload Build Log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: FeeTrack-build-log
-          path: build.log
-          if-no-files-found: warn
+          name: buildozer-log
+          path: buildozer-output.txt
