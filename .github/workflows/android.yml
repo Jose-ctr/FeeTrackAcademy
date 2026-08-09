@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 240
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
@@ -38,43 +38,35 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK packages
+      - name: Accept SDK licenses and install packages
         run: |
           yes | sdkmanager --licenses
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2" \
-            "cmdline-tools;latest"
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-      - name: Check buildozer.spec exists
+      - name: Verify project files
         run: |
-          if [ ! -f buildozer.spec ]; then
-            echo "buildozer.spec not found"
-            ls -la
-            exit 1
-          fi
+          ls -la
+          test -f buildozer.spec
+          test -f main.py
 
       - name: Build APK
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
         run: |
-          set -o pipefail
-          yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
-
-      - name: Show last build lines
-        if: failure()
-        run: |
-          echo "===== LAST 120 LINES ====="
-          tail -n 120 buildozer-output.txt || true
+          buildozer -v android debug
 
       - name: Find APK files
         if: always()
         run: |
-          echo "Searching for APK files..."
-          find . -name "*.apk" | sort || true
+          find . -name "*.apk" | sort
 
-      - name: Upload Build Log
+      - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: buildozer-log
-          path: buildozer-output.txt
+          name: FeeTrack-debug-apk
+          path: |
+            bin/*.apk
+            .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
