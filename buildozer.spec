@@ -26,11 +26,11 @@ android.permissions = INTERNET
 
 android.accept_sdk_license = True
 
-# Force a stable p4a branch
+# Stable python-for-android
 p4a.url = https://github.com/kivy/python-for-android.git
 p4a.branch = master
 
-# IMPORTANT: use Build-Tools 34 only
+# Use Build Tools 34 only
 android.build_tools_version = 34.0.0
 
 [buildozer]
