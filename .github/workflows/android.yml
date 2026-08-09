@@ -1,27 +1,27 @@
 name: Build FeeTrack APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 120
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Python 3.11
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -35,35 +35,35 @@ jobs:
             zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
             cmake libffi-dev libssl-dev build-essential
 
-      - name: Install Android SDK + NDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platform-tools
-            platforms;android-33
-            build-tools;34.0.0
-            ndk;28.0.13004108
-
-      - name: Accept Android licenses
-        run: yes | sdkmanager --licenses
+      - name: Install Android SDK command line tools
+        run: |
+          mkdir -p $HOME/android-sdk/cmdline-tools
+          cd $HOME/android-sdk
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
+          mv latest cmdline-tools/
 
       - name: Set Android environment
         run: |
-          echo "ANDROIDSDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROIDNDK=$ANDROID_SDK_ROOT/ndk/28.0.13004108" >> $GITHUB_ENV
-          echo "P4A_SDK_DIR=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "P4A_NDK_DIR=$ANDROID_SDK_ROOT/ndk/28.0.13004108" >> $GITHUB_ENV
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Verify aidl exists
+      - name: Install Android SDK packages
         run: |
-          ls -R $ANDROID_SDK_ROOT/build-tools
-          find $ANDROID_SDK_ROOT -name aidl
+          yes | sdkmanager --sdk_root=$HOME/android-sdk --licenses
+          sdkmanager --sdk_root=$HOME/android-sdk \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;34.0.0" \
+            "ndk;28.0.13004108"
 
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip
-          python -m pip install Cython==0.29.36 buildozer==1.5.0
+          pip install cython==0.29.36 buildozer==1.5.0
 
       - name: Clean caches
         run: |
@@ -74,18 +74,14 @@ jobs:
 
       - name: Build APK
         env:
-          ANDROIDNDK: ${{ env.ANDROIDNDK }}
-          ANDROIDSDK: ${{ env.ANDROIDSDK }}
-          P4A_SDK_DIR: ${{ env.P4A_SDK_DIR }}
-          P4A_NDK_DIR: ${{ env.P4A_NDK_DIR }}
-          ANDROIDAPI: 33
-          ANDROIDMINAPI: 24
+          ANDROIDSDK: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROIDNDK: ${{ env.ANDROID_SDK_ROOT }}/ndk/28.0.13004108
         run: |
+          buildozer android clean
           buildozer -v android debug --storage-dir=.buildozer
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FeeTrack-debug-apk
+          name: FeeTrack-APK
           path: bin/*.apk
-          
