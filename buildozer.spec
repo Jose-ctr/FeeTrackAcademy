@@ -5,6 +5,7 @@ package.name = feetrackacademy
 package.domain = com.josephmbui
 
 source.dir = .
+
 source.include_exts = py,png,jpg,jpeg,kv,atlas,db,ttf,xml
 
 version = 1.0.1
