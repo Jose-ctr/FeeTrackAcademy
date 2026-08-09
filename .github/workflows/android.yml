@@ -2,6 +2,8 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
@@ -38,7 +40,7 @@ jobs:
             "build-tools;34.0.0" \
             "cmdline-tools;latest"
 
-      - name: Show AIDL path
+      - name: Verify AIDL exists
         run: |
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
           find $ANDROID_SDK_ROOT -name aidl | head
@@ -48,36 +50,39 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install buildozer==1.5.0 cython==0.29.36 virtualenv
 
-      - name: Verify project files
+      # CRITICAL FIX
+      - name: Force Buildozer to use GitHub SDK
         run: |
-          echo "Repository contents:"
-          ls -la
-          test -f buildozer.spec
-          test -f main.py
+          mkdir -p ~/.buildozer
+          echo "export ANDROIDSDK=$ANDROID_SDK_ROOT" >> ~/.profile
+          echo "export ANDROID_HOME=$ANDROID_SDK_ROOT" >> ~/.profile
+          echo "export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> ~/.profile
 
-      - name: Remove old Buildozer cache
+      - name: Remove old Buildozer SDK/cache
         run: |
-          rm -rf ~/.buildozer
+          rm -rf ~/.buildozer/android
           rm -rf .buildozer
 
       - name: Build APK
         env:
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
           ANDROIDSDK: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
         run: |
-          set -o pipefail
-          buildozer -v android debug 2>&1 | tee buildozer-output.txt
+          buildozer -v android debug
 
-      - name: Print final build error
-        if: failure()
+      - name: Find APK files
+        if: always()
         run: |
-          echo "===== FINAL ERROR LINES ====="
-          tail -n 120 buildozer-output.txt || true
+          echo "Searching for APK files..."
+          find . -name "*.apk" | sort || true
 
-      - name: Upload build log
+      - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: buildozer-log
-          path: buildozer-output.txt
+          name: FeeTrack-debug-apk
+          path: |
+            bin/*.apk
+            .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
