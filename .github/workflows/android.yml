@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -29,9 +29,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip wget curl autoconf automake libtool pkg-config \
+            git zip unzip autoconf automake libtool pkg-config \
             zlib1g-dev libncurses6 libncurses-dev libtinfo6 \
-            cmake libffi-dev libssl-dev build-essential
+            cmake libffi-dev libssl-dev build-essential wget
 
       - name: Install Android SDK
         uses: android-actions/setup-android@v3
@@ -40,57 +40,3 @@ jobs:
         run: |
           yes | sdkmanager --licenses
           sdkmanager \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.2"
-
-      - name: Download Android NDK manually
-        run: |
-          mkdir -p $HOME/android-ndk
-          cd $HOME/android-ndk
-
-          # Correct NDK r28c download URL
-          wget -O ndk.zip https://dl.google.com/android/repository/android-ndk-r28c-linux.zip
-
-          unzip -q ndk.zip
-
-          echo "ANDROID_NDK_HOME=$HOME/android-ndk/android-ndk-r28c" >> $GITHUB_ENV
-          echo "ANDROIDNDK=$HOME/android-ndk/android-ndk-r28c" >> $GITHUB_ENV
-          echo "P4A_NDK_DIR=$HOME/android-ndk/android-ndk-r28c" >> $GITHUB_ENV
-
-      - name: Export Android SDK path
-        run: |
-          echo "ANDROIDSDK=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "P4A_SDK_DIR=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-
-      - name: Install Buildozer
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install --no-cache-dir cython==0.29.36
-          pip install --no-cache-dir buildozer==1.5.0
-
-      - name: Clean previous build cache
-        run: |
-          rm -rf .buildozer
-          rm -rf ~/.buildozer
-          rm -rf ~/.android/build-cache
-          rm -rf ~/.gradle/caches
-
-      - name: Verify Android paths
-        run: |
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "ANDROID_NDK_HOME=$ANDROID_NDK_HOME"
-          ls -la $ANDROID_SDK_ROOT
-          ls -la $ANDROID_NDK_HOME
-
-      - name: Build APK
-        run: |
-          buildozer -v android debug --storage-dir=.buildozer
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: FeeTrack-debug-apk
-          path: bin/*.apk
