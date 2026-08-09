@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
-      ANDROID_HOME: ${{ github.workspace }}/android-sdk
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -49,70 +45,34 @@ jobs:
             libncurses-dev \
             libtinfo6
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept Android licenses
-        run: |
-          yes | sdkmanager --licenses || true
-
-      - name: Install Android SDK packages
-        run: |
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-33"
-          sdkmanager "build-tools;34.0.0"
-          sdkmanager "ndk;28.0.13004108"
-
-      - name: Verify Android SDK
-        run: |
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "ANDROID_HOME=$ANDROID_HOME"
-
-          echo "===== BUILD TOOLS ====="
-          ls -la "$ANDROID_SDK_ROOT/build-tools"
-
-          echo "===== AIDL ====="
-          ls -la "$ANDROID_SDK_ROOT/build-tools/34.0.0/aidl"
-
-          echo "===== NDK ====="
-          ls -la "$ANDROID_SDK_ROOT/ndk/28.0.13004108"
-
-      - name: Install Python build tools
+      - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip
-          python -m pip install --upgrade buildozer cython==0.29.37
+          python -m pip install --upgrade buildozer
+          python -m pip install "cython==0.29.37"
 
-      - name: Clear previous Buildozer cache
+      - name: Clear Buildozer cache
         run: |
+          rm -rf ~/.buildozer
           rm -rf .buildozer
           rm -rf bin
 
+      - name: Prepare Android SDK
+        run: |
+          mkdir -p "$HOME/.buildozer/android/platform/android-sdk"
+
+          export ANDROID_SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+
       - name: Build APK
         env:
-          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
-          ANDROIDSDK: ${{ env.ANDROID_SDK_ROOT }}
-
-          ANDROIDNDK: ${{ env.ANDROID_SDK_ROOT }}/ndk/28.0.13004108
-          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/28.0.13004108
-          ANDROID_NDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}/ndk/28.0.13004108
-
-          P4A_SDK_DIR: ${{ env.ANDROID_SDK_ROOT }}
-          P4A_NDK_DIR: ${{ env.ANDROID_SDK_ROOT }}/ndk/28.0.13004108
-
+          ANDROID_ACCEPT_SDK_LICENSE: "1"
+          P4A_ACCEPT_ANDROID_SDK_LICENSE: "1"
         run: |
-          echo "===== BUILD ENVIRONMENT ====="
-          echo "SDK: $ANDROID_SDK_ROOT"
-          echo "NDK: $ANDROID_NDK_HOME"
-
-          echo "===== BUILD TOOLS ====="
-          ls -la "$ANDROID_SDK_ROOT/build-tools"
-
-          echo "===== AIDL ====="
-          find "$ANDROID_SDK_ROOT/build-tools" -name aidl -type f -print
-
-          echo "===== BUILD APK ====="
-          buildozer -v android debug \
+          yes | buildozer -v android debug \
             --storage-dir=.buildozer
 
       - name: Check APK
