@@ -6,10 +6,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,db
 version = 1.0.1
 
-Let p4a choose the matching Python 3.11 build
-
 requirements = python3,kivy==2.3.0
-
 orientation = portrait
 
 author = Joseph
@@ -25,8 +22,6 @@ android.archs = arm64-v8a
 android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.accept_sdk_license = True
 android.logcat_filters = *:S python:D
-
-Use modern python-for-android with AAB support
 
 p4a.branch = develop
 
