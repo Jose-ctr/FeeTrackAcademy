@@ -50,20 +50,31 @@ jobs:
       - name: Check buildozer.spec exists
         run: |
           if [ ! -f buildozer.spec ]; then
-            echo "buildozer.spec not found"
+            echo "::error::buildozer.spec not found in repo root"
+            ls -la
             exit 1
           fi
+          echo "Found buildozer.spec"
 
       - name: Build APK
         run: |
           yes | buildozer -v android debug 2>&1 | tee buildozer-output.txt
+
+      - name: Find APK files
+        if: always()
+        run: |
+          echo "Searching for APK files..."
+          find . -name "*.apk" | sort
 
       - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: FeeTrack-APK
-          path: bin/*.apk
+          path: |
+            bin/*.apk
+            .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
+            .buildozer/android/platform/build-*/dists/*/bin/*.apk
           if-no-files-found: warn
 
       - name: Upload Build Log
