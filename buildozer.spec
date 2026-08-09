@@ -5,7 +5,7 @@ package.name = feetrackacademy
 package.domain = com.josephmbui
 
 source.dir = .
-source.include_exts = py,png,jpg,jpeg,kv,atlas,db
+source.include_exts = py,png,jpg,jpeg,kv,atlas,db,ttf,xml
 
 version = 1.0.1
 
@@ -13,8 +13,11 @@ requirements = python3,kivy==2.3.0
 
 orientation = portrait
 
+fullscreen = 0
+
 author = Joseph Mbui
 author.email = mbuijoseph51@gmail.com
+
 
 [android]
 
@@ -26,12 +29,8 @@ android.permissions = INTERNET
 
 android.accept_sdk_license = True
 
-# Stable python-for-android
-p4a.url = https://github.com/kivy/python-for-android.git
-p4a.branch = master
-
-# Use Build Tools 34 only
 android.build_tools_version = 34.0.0
+
 
 [buildozer]
 
