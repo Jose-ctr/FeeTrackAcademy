@@ -65,7 +65,6 @@ jobs:
           ANDROIDAPI: 33
           ANDROIDMINAPI: 24
         run: |
-          buildozer android clean
           buildozer -v android debug --storage-dir=.buildozer
 
       - name: Upload APK
