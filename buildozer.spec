@@ -16,6 +16,8 @@ orientation = portrait
 author = Joseph Mbui
 author.email = mbuijoseph51@gmail.com
 
+[android]
+
 android.api = 33
 android.minapi = 24
 android.archs = arm64-v8a
@@ -24,8 +26,8 @@ android.permissions = INTERNET
 
 android.accept_sdk_license = True
 
-# Use latest compatible python-for-android branch
-p4a.branch = develop
+p4a.url = https://github.com/kivy/python-for-android.git
+p4a.branch = master
 
 [buildozer]
 
