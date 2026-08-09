@@ -38,7 +38,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install required Android SDK packages
+      - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses
           sdkmanager \
@@ -66,18 +66,27 @@ jobs:
           echo "Searching for APK files..."
           find . -name "*.apk" | sort
 
+      - name: Show bin folders
+        if: always()
+        run: |
+          echo "=== bin ==="
+          ls -lah bin || true
+          echo "=== .buildozer/bin ==="
+          ls -lah .buildozer/bin || true
+
       - name: Upload APK
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: FeeTrack-APK
+          name: FeeTrack-debug-apk
           path: |
             bin/*.apk
+            .buildozer/bin/*.apk
             .buildozer/android/platform/build-*/dists/*/build/outputs/apk/debug/*.apk
             .buildozer/android/platform/build-*/dists/*/bin/*.apk
-          if-no-files-found: warn
+          if-no-files-found: error
 
-      - name: Upload Build Log
+      - name: Upload Buildozer Log
         if: always()
         uses: actions/upload-artifact@v4
         with:
