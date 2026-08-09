@@ -23,7 +23,7 @@ android.permissions = INTERNET,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.accept_sdk_license = True
 android.logcat_filters = *:S python:D
 
-# Add this line
+# IMPORTANT
 p4a.branch = stable
 
 [buildozer]
