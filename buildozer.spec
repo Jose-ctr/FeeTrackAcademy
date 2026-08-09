@@ -24,7 +24,7 @@ android.permissions = INTERNET
 
 android.accept_sdk_license = True
 
-# IMPORTANT: use develop branch
+# Use latest compatible python-for-android branch
 p4a.branch = develop
 
 [buildozer]
