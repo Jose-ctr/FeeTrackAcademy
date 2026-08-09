@@ -22,7 +22,7 @@ author.email = mbuijoseph51@gmail.com
 [android]
 
 android.api = 33
-android.minapi = 24
+android.minapi = 30
 android.archs = arm64-v8a
 
 android.permissions = INTERNET
