@@ -38,7 +38,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Accept SDK licenses and install packages
+      - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
@@ -48,6 +48,9 @@ jobs:
           ls -la
           test -f buildozer.spec
           test -f main.py
+
+      - name: Clear old build cache
+        run: rm -rf .buildozer
 
       - name: Build APK
         env:
