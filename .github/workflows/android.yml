@@ -21,7 +21,7 @@ jobs:
 
 
       # ==========================================
-      # 2. PYTHON 3.11
+      # 2. PYTHON
       # ==========================================
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,7 +30,7 @@ jobs:
 
 
       # ==========================================
-      # 3. JAVA 17
+      # 3. JAVA
       # ==========================================
       - name: Set up Java
         uses: actions/setup-java@v5
@@ -79,7 +79,7 @@ jobs:
 
 
       # ==========================================
-      # 6. VERIFY REPOSITORY
+      # 6. VERIFY PROJECT
       # ==========================================
       - name: Verify project files
         run: |
@@ -91,37 +91,23 @@ jobs:
 
           echo ""
           echo "=========================================="
-          echo "ROOT FILES"
+          echo "PROJECT FILES"
           echo "=========================================="
 
           ls -la
 
           echo ""
           echo "=========================================="
-          echo "BUILDOZER SPEC LOCATION"
-          echo "=========================================="
-
-          find . \
-            -maxdepth 3 \
-            -type f \
-            -name "buildozer.spec" \
-            -print
-
-          echo ""
-          echo "=========================================="
-          echo "VERIFY buildozer.spec"
+          echo "BUILDOZER SPEC"
           echo "=========================================="
 
           test -f buildozer.spec
-
-          echo ""
-          echo "===== buildozer.spec CONTENT ====="
 
           cat buildozer.spec
 
           echo ""
           echo "=========================================="
-          echo "VERIFY main.py"
+          echo "MAIN.PY"
           echo "=========================================="
 
           test -f main.py
@@ -130,7 +116,7 @@ jobs:
 
 
       # ==========================================
-      # 7. CLEAN OLD BUILDOZER FILES
+      # 7. CLEAN OLD BUILDS
       # ==========================================
       - name: Clean Buildozer
         run: |
@@ -150,7 +136,7 @@ jobs:
 
           mkdir -p "$SDK"
 
-          echo "ANDROID SDK:"
+          echo "SDK:"
           echo "$SDK"
 
 
@@ -193,7 +179,7 @@ jobs:
 
           echo "$SDK/tools/bin" >> "$GITHUB_PATH"
 
-          echo "===== MODERN SDKMANAGER ====="
+          echo "===== SDKMANAGER ====="
 
           ls -lh \
             "$SDK/cmdline-tools/latest/bin/sdkmanager"
@@ -231,13 +217,11 @@ jobs:
 
           export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
 
-          echo "===== SDKMANAGER ====="
-
           "$SDK/tools/bin/sdkmanager" --version
 
 
       # ==========================================
-      # 12. ACCEPT LICENSES
+      # 12. ACCEPT ANDROID LICENSES
       # ==========================================
       - name: Accept Android licenses
         run: |
@@ -316,60 +300,94 @@ jobs:
           P4A_NDK_DIR: ${{ env.HOME }}/.buildozer/android/platform/android-sdk/ndk/28.0.13004108
 
         run: |
-          set -e
+          set -o pipefail
 
           SDK="$HOME/.buildozer/android/platform/android-sdk"
 
           export PATH="$SDK/tools/bin:$SDK/cmdline-tools/latest/bin:$PATH"
 
           echo "=========================================="
-          echo "PYTHON"
+          echo "BUILD ENVIRONMENT"
           echo "=========================================="
 
+          echo "Python:"
           python --version
 
           echo ""
-          echo "=========================================="
-          echo "JAVA"
-          echo "=========================================="
-
+          echo "Java:"
           java -version
 
           echo ""
-          echo "=========================================="
-          echo "SDKMANAGER"
-          echo "=========================================="
+          echo "SDK:"
+          echo "$ANDROID_SDK_ROOT"
 
+          echo ""
+          echo "SDKMANAGER:"
           "$SDK/tools/bin/sdkmanager" --version
 
           echo ""
-          echo "=========================================="
-          echo "AIDL"
-          echo "=========================================="
-
-          ls -lh \
-            "$SDK/build-tools/34.0.0/aidl"
+          echo "AIDL:"
+          ls -lh "$SDK/build-tools/34.0.0/aidl"
 
           echo ""
           echo "=========================================="
-          echo "BUILDOZER SPEC"
+          echo "STARTING BUILDOZER"
           echo "=========================================="
 
-          cat buildozer.spec
-
-          echo ""
-          echo "=========================================="
-          echo "BUILD APK"
-          echo "=========================================="
+          echo "Full Buildozer log is being saved to build.log"
 
           buildozer -v android debug \
-            --storage-dir=.buildozer
+            --storage-dir=.buildozer \
+            2>&1 | tee build.log
 
 
       # ==========================================
-      # 16. CHECK APK
+      # 16. SHOW LAST PART OF LOG
+      # ==========================================
+      - name: Show build log summary
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "LAST 150 LINES OF BUILD LOG"
+          echo "=========================================="
+
+          if [ -f build.log ]; then
+            tail -n 150 build.log
+          else
+            echo "build.log was not created."
+          fi
+
+
+      # ==========================================
+      # 17. FIND ERRORS
+      # ==========================================
+      - name: Find build errors
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "ERROR SUMMARY"
+          echo "=========================================="
+
+          if [ -f build.log ]; then
+
+            grep -i \
+              -E "error|exception|failed|command failed|traceback" \
+              build.log \
+              | tail -n 100 \
+              || true
+
+          else
+
+            echo "No build.log found."
+
+          fi
+
+
+      # ==========================================
+      # 18. CHECK APK
       # ==========================================
       - name: Check APK
+        if: always()
         run: |
           echo "=========================================="
           echo "APK FILES"
@@ -380,25 +398,43 @@ jobs:
             -name "*.apk" \
             -print
 
-          if ! find bin \
+          if find bin \
             -type f \
             -name "*.apk" \
             | grep -q .; then
 
             echo ""
-            echo "ERROR: No APK was produced."
-            echo ""
+            echo "APK FOUND!"
 
-            exit 1
+          else
+
+            echo ""
+            echo "No APK was produced."
+
           fi
 
 
       # ==========================================
-      # 17. UPLOAD APK
+      # 19. UPLOAD APK
       # ==========================================
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: FeeTrack-APK
           path: bin/*.apk
           if-no-files-found: error
+
+
+      # ==========================================
+      # 20. UPLOAD BUILD LOG
+      # ==========================================
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FeeTrack-build-log
+          path: |
+            build.log
+            .buildozer/android/platform/python-for-android/*.log
+          if-no-files-found: warn
