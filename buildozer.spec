@@ -9,7 +9,7 @@ source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
 version = 1.0.0
 version.code = 1
 
-# Compatible versions
+# Python 3.11 + Kivy 2.3.0 (stable Android combo)
 requirements = python3==3.11.8,kivy==2.3.0
 
 orientation = portrait
