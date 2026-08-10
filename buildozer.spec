@@ -9,8 +9,7 @@ source.include_exts = py,kv,png,jpg,jpeg,ttf,xml
 version = 1.0.0
 version.code = 1
 
-# IMPORTANT: do not pin python version
-requirements = python3,kivy==2.3.0
+requirements = python3==3.11.8,kivy==2.3.0,pyjnius
 
 orientation = portrait
 fullscreen = 0
@@ -20,10 +19,7 @@ author.email = mbuijoseph51@gmail.com
 
 android.api = 33
 android.minapi = 30
+android.ndk = 28c
 android.archs = arm64-v8a
-android.build_tools_version = 34.0.0
-android.permissions = INTERNET
-android.accept_sdk_license = True
 
-[buildozer]
 log_level = 2
