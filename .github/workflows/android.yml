@@ -10,10 +10,6 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
 
-    env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,6 +25,9 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install Linux dependencies
         run: |
           sudo apt-get update
@@ -39,18 +38,18 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
-          $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
+          yes | sdkmanager --licenses
+          sdkmanager \
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.2" \
-            "ndk;25.2.9519653"
+            "ndk;28.0.13004108"
 
       - name: Add Build Tools to PATH
         run: |
-          echo "$ANDROID_SDK_ROOT/build-tools/33.0.2" >> $GITHUB_PATH
-          which aidl
-          aidl --version || true
+          echo "$ANDROID_HOME/build-tools/33.0.2" >> $GITHUB_PATH
+          ls -la "$ANDROID_HOME/build-tools/33.0.2"
+          "$ANDROID_HOME/build-tools/33.0.2/aidl" --version || true
 
       - name: Install Buildozer
         run: |
