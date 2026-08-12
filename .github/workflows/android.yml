@@ -34,15 +34,15 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools"
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platforms;android-33"
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "build-tools;33.0.2"
-          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools"
+          sdkmanager "platforms;android-33"
+          sdkmanager "build-tools;33.0.2"
 
-      - name: Verify AIDL exists
+      - name: Verify AIDL
         run: |
-          find $ANDROID_SDK_ROOT/build-tools -name aidl
-          ls -R $ANDROID_SDK_ROOT/build-tools
+          find $ANDROID_SDK_ROOT -name aidl || true
+          ls $ANDROID_SDK_ROOT/build-tools/33.0.2
 
       - name: Install system dependencies
         run: |
@@ -56,7 +56,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install buildozer cython==0.29.36
 
-      - name: Clear old build cache
+      - name: Clear build cache
         run: rm -rf .buildozer
 
       - name: Build APK
