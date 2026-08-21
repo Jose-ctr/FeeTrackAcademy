@@ -1,9 +1,10 @@
-name: Android Build
+name: Build FeeTrack Academy APK
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
@@ -11,8 +12,10 @@ jobs:
     timeout-minutes: 120
 
     env:
-      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
+      ANDROID_HOME: ${{ github.workspace }}/android-sdk
+      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/28.2.13676358
+      P4A_RELEASE: "2026.05.09"
 
     steps:
       - name: Checkout
@@ -21,50 +24,94 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11.8"
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK components
-        run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools"
-          sdkmanager "platforms;android-33"
-          sdkmanager "build-tools;33.0.2"
-
-      - name: Verify AIDL
-        run: |
-          find $ANDROID_SDK_ROOT -name aidl || true
-          ls $ANDROID_SDK_ROOT/build-tools/33.0.2
-
-      - name: Install system dependencies
+      - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip autoconf libtool pkg-config \
-            zlib1g-dev libncurses6 libncurses-dev libtinfo6
+            git \
+            zip \
+            unzip \
+            wget \
+            curl \
+            autoconf \
+            automake \
+            autopoint \
+            libtool \
+            libtool-bin \
+            pkg-config \
+            cmake \
+            build-essential \
+            libffi-dev \
+            libssl-dev \
+            libltdl-dev \
+            zlib1g-dev
 
-      - name: Install Buildozer
+      - name: Install Android command line tools
+        run: |
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+
+          unzip -q commandlinetools-linux-13114758_latest.zip
+
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          mv cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          echo "$ANDROID_SDK_ROOT/build-tools/35.0.0" >> "$GITHUB_PATH"
+
+      - name: Accept Android licenses
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;35.0.0" \
+            "ndk;28.2.13676358"
+
+      - name: Verify AIDL
+        run: |
+          echo "Android SDK: $ANDROID_SDK_ROOT"
+          echo "Checking AIDL..."
+          ls -la "$ANDROID_SDK_ROOT/build-tools/35.0.0/aidl"
+          "$ANDROID_SDK_ROOT/build-tools/35.0.0/aidl" || true
+
+      - name: Install Python build tools
         run: |
           python -m pip install --upgrade pip
-          pip install buildozer cython==0.29.36
+          python -m pip install \
+            buildozer \
+            cython==0.29.37
 
-      - name: Clear build cache
-        run: rm -rf .buildozer
+      - name: Clean old Buildozer files
+        run: |
+          rm -rf .buildozer
+          rm -rf bin
 
       - name: Build APK
-        run: buildozer android debug
+        run: |
+          buildozer android debug
+
+      - name: Show APK
+        run: |
+          find bin -type f -name "*.apk" -print
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FeeTrack-APK
+          name: FeeTrack-Academy-APK
           path: bin/*.apk
-          
+          if-no-files-found: error
