@@ -1,4 +1,4 @@
-name: Build FeeTrack Academy APK
+name: Build FeeTrack Academy
 
 on:
   workflow_dispatch:
@@ -12,27 +12,25 @@ jobs:
     timeout-minutes: 120
 
     env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
       ANDROID_HOME: ${{ github.workspace }}/android-sdk
-      ANDROID_NDK_HOME: ${{ github.workspace }}/android-sdk/ndk/28.2.13676358
-      P4A_RELEASE: "2026.05.09"
+      ANDROID_SDK_ROOT: ${{ github.workspace }}/android-sdk
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11.8"
 
-      - name: Set up Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Install Linux dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -41,40 +39,45 @@ jobs:
             unzip \
             wget \
             curl \
+            build-essential \
             autoconf \
             automake \
-            autopoint \
             libtool \
-            libtool-bin \
             pkg-config \
             cmake \
-            build-essential \
             libffi-dev \
             libssl-dev \
             libltdl-dev \
             zlib1g-dev
 
-      - name: Install Android command line tools
+      - name: Install Android SDK command line tools
         run: |
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
 
           cd /tmp
+
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
 
           unzip -q commandlinetools-linux-13114758_latest.zip
 
-          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools/latest"
-          mv cmdline-tools/* "$ANDROID_SDK_ROOT/cmdline-tools/latest/"
+          mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
 
-          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$ANDROID_SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
-          echo "$ANDROID_SDK_ROOT/build-tools/35.0.0" >> "$GITHUB_PATH"
+          cp -R cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
+
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Check SDK manager
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          sdkmanager --version
 
       - name: Accept Android licenses
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
+          yes | sdkmanager --licenses >/dev/null || true
 
-      - name: Install Android SDK packages
+      - name: Install Android SDK
         run: |
           sdkmanager \
             "platform-tools" \
@@ -82,32 +85,62 @@ jobs:
             "build-tools;35.0.0" \
             "ndk;28.2.13676358"
 
-      - name: Verify AIDL
+      - name: VERIFY AIDL
         run: |
-          echo "Android SDK: $ANDROID_SDK_ROOT"
-          echo "Checking AIDL..."
-          ls -la "$ANDROID_SDK_ROOT/build-tools/35.0.0/aidl"
-          "$ANDROID_SDK_ROOT/build-tools/35.0.0/aidl" || true
+          echo "======================================"
+          echo "ANDROID SDK"
+          echo "======================================"
+          echo "$ANDROID_HOME"
 
-      - name: Install Python build tools
+          echo "======================================"
+          echo "BUILD TOOLS"
+          echo "======================================"
+          ls -la "$ANDROID_HOME/build-tools/"
+
+          echo "======================================"
+          echo "AIDL FILE"
+          echo "======================================"
+          ls -la "$ANDROID_HOME/build-tools/35.0.0/aidl"
+
+          echo "======================================"
+          echo "AIDL VERSION"
+          echo "======================================"
+          "$ANDROID_HOME/build-tools/35.0.0/aidl" || true
+
+          echo "======================================"
+          echo "SEARCHING FOR ALL AIDL FILES"
+          echo "======================================"
+          find "$ANDROID_HOME" -type f -name aidl -print
+
+      - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip
-          python -m pip install \
-            buildozer \
-            cython==0.29.37
+          python -m pip install buildozer
+          python -m pip install cython==0.29.37
 
-      - name: Clean old Buildozer files
+      - name: Configure Buildozer Android paths
+        run: |
+          mkdir -p ~/.buildozer
+
+          cat > ~/.buildozer/config.ini <<EOF
+          [buildozer]
+          log_level = 2
+          warn_on_root = 0
+          EOF
+
+      - name: Clean previous build
         run: |
           rm -rf .buildozer
           rm -rf bin
 
       - name: Build APK
         run: |
-          buildozer android debug
+          buildozer -v android debug
 
-      - name: Show APK
+      - name: Find APK
         run: |
-          find bin -type f -name "*.apk" -print
+          echo "APK files:"
+          find . -type f -name "*.apk" -print
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
