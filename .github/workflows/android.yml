@@ -12,51 +12,34 @@ jobs:
     timeout-minutes: 120
 
     env:
-      BUILDOZER_ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
       ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
       ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
 
     steps:
 
-      # ============================================
-      # CHECKOUT
-      # ============================================
       - name: Checkout
         uses: actions/checkout@v4
 
-
-      # ============================================
-      # PYTHON 3.11.8
-      # ============================================
-      - name: Setup Python
+      - name: Setup Python 3.11.8
         uses: actions/setup-python@v5
         with:
           python-version: "3.11.8"
 
-
-      # ============================================
-      # JAVA 17
-      # ============================================
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-
-      # ============================================
-      # LINUX DEPENDENCIES
-      # ============================================
-      - name: Install dependencies
+      - name: Install Linux dependencies
         run: |
           sudo apt-get update
-
           sudo apt-get install -y \
             git \
-            zip \
-            unzip \
             wget \
             curl \
+            unzip \
+            zip \
             build-essential \
             autoconf \
             automake \
@@ -70,45 +53,20 @@ jobs:
             libltdl-dev \
             zlib1g-dev
 
-
-      # ============================================
-      # PYTHON BUILD TOOLS
-      # ============================================
       - name: Install Buildozer
         run: |
-          python -m pip install --upgrade pip
-
+          python -m pip install --upgrade pip setuptools wheel
           python -m pip install buildozer
-
           python -m pip install cython==0.29.37
 
-
-      # ============================================
-      # REMOVE OLD BUILDOZER SDK
-      # ============================================
       - name: Clean Buildozer
         run: |
           rm -rf "$HOME/.buildozer"
           rm -rf .buildozer
           rm -rf bin
 
-          mkdir -p "$HOME/.buildozer"
-
-
-      # ============================================
-      # CREATE BUILDOZER SDK DIRECTORY
-      # ============================================
-      - name: Prepare Buildozer Android SDK
-        run: |
           mkdir -p "$HOME/.buildozer/android/platform/android-sdk"
 
-          echo "Buildozer SDK:"
-          echo "$HOME/.buildozer/android/platform/android-sdk"
-
-
-      # ============================================
-      # INSTALL ANDROID COMMAND LINE TOOLS
-      # ============================================
       - name: Install Android Command Line Tools
         run: |
           SDK="$HOME/.buildozer/android/platform/android-sdk"
@@ -124,22 +82,29 @@ jobs:
 
           mkdir -p "$SDK/cmdline-tools/latest"
 
-          cp -R cmdline-tools/* \
-            "$SDK/cmdline-tools/latest/"
+          cp -R cmdline-tools/* "$SDK/cmdline-tools/latest/"
 
           echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$SDK/platform-tools" >> "$GITHUB_PATH"
-          echo "$SDK/build-tools/35.0.0" >> "$GITHUB_PATH"
 
+      - name: Verify SDK Manager
+        run: |
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
 
-      # ============================================
-      # INSTALL ANDROID PACKAGES
-      # ============================================
+          export PATH="$SDK/cmdline-tools/latest/bin:$PATH"
+
+          echo "SDK = $SDK"
+
+          sdkmanager --version
+
       - name: Install Android SDK Packages
         run: |
           SDK="$HOME/.buildozer/android/platform/android-sdk"
 
           export PATH="$SDK/cmdline-tools/latest/bin:$PATH"
+
+          echo "Installing Android SDK packages..."
+
+          yes | sdkmanager --sdk_root="$SDK" --licenses || true
 
           sdkmanager --sdk_root="$SDK" \
             "platform-tools" \
@@ -147,78 +112,64 @@ jobs:
             "build-tools;35.0.0" \
             "ndk;28.2.13676358"
 
-
-      # ============================================
-      # ACCEPT LICENSES
-      # ============================================
-      - name: Accept Android Licenses
-        run: |
-          SDK="$HOME/.buildozer/android/platform/android-sdk"
-
-          export PATH="$SDK/cmdline-tools/latest/bin:$PATH"
-
-          yes | sdkmanager \
-            --sdk_root="$SDK" \
-            --licenses || true
-
-
-      # ============================================
-      # VERIFY BUILDOZER SDK
-      # ============================================
-      - name: Verify Buildozer SDK
+      - name: Verify Android SDK
         run: |
           SDK="$HOME/.buildozer/android/platform/android-sdk"
 
           echo "======================================"
-          echo "BUILDOZER SDK"
+          echo "SDK DIRECTORY"
           echo "======================================"
 
-          echo "$SDK"
+          ls -la "$SDK"
 
           echo ""
-          echo "BUILD TOOLS:"
+          echo "======================================"
+          echo "BUILD TOOLS"
+          echo "======================================"
+
           ls -la "$SDK/build-tools"
 
           echo ""
-          echo "AIDL:"
+          echo "======================================"
+          echo "AIDL"
+          echo "======================================"
+
           ls -lh "$SDK/build-tools/35.0.0/aidl"
 
           echo ""
-          echo "AIDL TEST:"
+          echo "======================================"
+          echo "AIDL VERSION"
+          echo "======================================"
+
           "$SDK/build-tools/35.0.0/aidl" --version || true
 
           echo ""
-          echo "PLATFORM:"
+          echo "======================================"
+          echo "PLATFORM"
+          echo "======================================"
+
           ls -la "$SDK/platforms/android-33"
 
           echo ""
-          echo "NDK:"
+          echo "======================================"
+          echo "NDK"
+          echo "======================================"
+
           ls -la "$SDK/ndk/28.2.13676358"
 
-
-      # ============================================
-      # VERIFY ENVIRONMENT
-      # ============================================
-      - name: Verify Environment
+      - name: Configure Android Environment
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
 
-          echo ""
-          echo "SDKMANAGER:"
-          which sdkmanager || true
+          echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$SDK/platform-tools" >> "$GITHUB_PATH"
+          echo "$SDK/build-tools/35.0.0" >> "$GITHUB_PATH"
 
-          echo ""
-          echo "AIDL:"
-          find "$HOME/.buildozer/android/platform/android-sdk" \
-            -type f \
-            -name aidl \
-            -print
+      - name: Clean Project Build
+        run: |
+          rm -rf .buildozer
+          rm -rf bin
 
-
-      # ============================================
-      # BUILD
-      # ============================================
       - name: Build APK
         env:
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
@@ -229,39 +180,32 @@ jobs:
           export PATH="$SDK/cmdline-tools/latest/bin:$SDK/platform-tools:$SDK/build-tools/35.0.0:$PATH"
 
           echo "======================================"
-          echo "FINAL AIDL CHECK"
+          echo "FINAL SDK CHECK"
           echo "======================================"
 
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+
+          echo ""
+          echo "AIDL:"
           ls -lh "$SDK/build-tools/35.0.0/aidl"
 
           echo ""
-          echo "======================================"
-          echo "STARTING BUILDOZER"
-          echo "======================================"
+          echo "BUILDING FEE TRACK ACADEMY..."
+          echo ""
 
           buildozer -v android debug
 
-
-      # ============================================
-      # FIND APK
-      # ============================================
       - name: Find APK
         if: always()
         run: |
-          echo "======================================"
-          echo "APK SEARCH"
-          echo "======================================"
-
+          echo "APK FILES:"
           find . -type f -name "*.apk" -print || true
 
           echo ""
           echo "BIN:"
           ls -lah bin 2>/dev/null || true
 
-
-      # ============================================
-      # UPLOAD APK
-      # ============================================
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
